@@ -1,0 +1,26 @@
+tml,
+body {
+    height:100%;
+}
+
+body {
+    background-color:#FEFEFE;
+}
+
+a, a:focus {
+    color: #2C3E50;
+    text-decoration: none !important;
+}
+
+a:hover {
+    color: #2C3E50;
+    text-decoration: underline !important;
+}
+
+nav a:focus {
+    color: #FFFFFF !important;
+}
+
+nav a:hover {
+    color: #D0D0D0 !important;
+}
