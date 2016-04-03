@@ -4,15 +4,14 @@ Author: StackFocus
 File: app.py
 Purpose: Manages the app
 """
-
 import os
 import fileinput
 import flask_migrate
 from re import sub
 from flask_script import Manager
 from adreset2 import app, db, models
+from adreset2.utils import add_default_configuration_settings
 
-manager = Manager(app)
 app.config.from_object('config.BaseConfiguration')
 migrate = flask_migrate.Migrate(app, db)
 manager = Manager(app)
@@ -27,6 +26,7 @@ def createdb():
         flask_migrate.init(directory='db/migrations')
     flask_migrate.migrate(directory='db/migrations')
     flask_migrate.upgrade(directory='db/migrations')
+    add_default_configuration_settings()
 
 
 @manager.shell
