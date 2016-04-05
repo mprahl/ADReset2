@@ -33,3 +33,22 @@ function filterText(text) {
       return entityMap[s];
     });
 }
+
+
+function addStatusMessage(category, message) {
+
+    // Generates a random id for the alert so that the setTimeout function below only applies to that specific alert
+    var alertId = Math.floor((Math.random() * 100000) + 1);
+
+    $('#bottomOuterAlertDiv').html('\
+        <div id="bottomAlert' + alertId + '" class="alert ' + ((category == 'success') ? 'alert-success' : 'alert-danger') + ' alert-dismissible fade in" role="alert">\
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>\
+                ' + message + '\
+        </div>\
+    ').hide().fadeIn();
+
+    setTimeout(function () {
+        $('#bottomAlert' + alertId).fadeOut(function() {$(this).remove()}); },
+        ((category == 'success') ? 5000 : 8000)
+    );
+}

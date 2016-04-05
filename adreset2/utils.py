@@ -1,6 +1,6 @@
 """
 Author: StackFocus
-File: models.py
+File: utils.py
 Purpose: contains classes and functions for the application
 """
 import ldap
@@ -9,8 +9,34 @@ from re import search, sub, IGNORECASE
 from os import getcwd
 from json import dumps
 from datetime import datetime
-from adreset2 import models, db
+from wtforms.validators import StopValidation as WtfStopValidation
+from adreset2 import models, db, bcrypt
 from adreset2.errors import ValidationError, ADException
+
+
+def validate_wtforms_password(form, field):
+    """ Validates the password from a wtforms object
+    """
+    username = form.username.data
+    password = form.password.data
+
+    if username and password:
+        try:
+            if form.auth_source.data == 'ADReset2 User':
+                admin = models.Admins.query.filter_by(username=username, source='local').first()
+
+                if admin is not None and bcrypt.check_password_hash(admin.password, password):
+                    form.admin = admin
+                else:
+                    json_logger(
+                        'auth', username,
+                        'The administrator "{0}" entered an incorrect username or password'.format(
+                            username))
+                    raise WtfStopValidation('The username or password was incorrect')
+            else:
+                pass
+        except ADException as e:
+            raise WtfStopValidation(e.message)
 
 
 def add_default_configuration_settings():
