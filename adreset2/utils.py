@@ -50,6 +50,13 @@ def add_default_configuration_settings():
         min_pwd_length.regex = '^([1-9]|[1][0-9]|[2][0-5])$'
         db.session.add(min_pwd_length)
 
+    if not models.Configs.query.filter_by(setting='Change Auditing').first():
+        login_auditing = models.Configs()
+        login_auditing.setting = 'Change Auditing'
+        login_auditing.value = 'False'
+        login_auditing.regex = '^(True|False)$'
+        db.session.add(login_auditing)
+
     if not models.Configs.query.filter_by(setting='Login Auditing').first():
         login_auditing = models.Configs()
         login_auditing.setting = 'Login Auditing'
@@ -63,40 +70,34 @@ def add_default_configuration_settings():
         log_file.regex = '^(.+)$'
         db.session.add(log_file)
 
-    if not models.Configs.query.filter_by(setting='AD Server LDAP String').first():
-        ad_server = models.Configs()
-        ad_server.setting = 'AD Server LDAP String'
-        ad_server.regex = '^(.*)$'
+    if not models.AdConfigs.query.filter_by(setting='LDAP String').first():
+        ad_server = models.AdConfigs()
+        ad_server.setting = 'LDAP String'
         db.session.add(ad_server)
 
-    if not models.Configs.query.filter_by(setting='AD Domain').first():
-        ad_domain = models.Configs()
-        ad_domain.setting = 'AD Domain'
-        ad_domain.regex = '^(.*)$'
+    if not models.AdConfigs.query.filter_by(setting='Domain Name').first():
+        ad_domain = models.AdConfigs()
+        ad_domain.setting = 'Domain Name'
         db.session.add(ad_domain)
 
-    if not models.Configs.query.filter_by(setting='AD Service Account Username').first():
-        ad_svc_user = models.Configs()
-        ad_svc_user.setting = 'AD Service Account Username'
-        ad_svc_user.regex = '^(.*)$'
+    if not models.AdConfigs.query.filter_by(setting='Service Account Username').first():
+        ad_svc_user = models.AdConfigs()
+        ad_svc_user.setting = 'Service Account Username'
         db.session.add(ad_svc_user)
 
-    if not models.Configs.query.filter_by(setting='AD Service Account Password').first():
-        ad_svc_password = models.Configs()
+    if not models.AdConfigs.query.filter_by(setting='Service Account Password').first():
+        ad_svc_password = models.AdConfigs()
         ad_svc_password.setting = 'AD Service Account Password'
-        ad_svc_password.regex = '^(.*)$'
         db.session.add(ad_svc_password)
 
-    if not models.Configs.query.filter_by(setting='AD Administrative Group').first():
-        ad_admin_group = models.Configs()
-        ad_admin_group.setting = 'AD Administrative Group'
-        ad_admin_group.regex = '^(.*)$'
+    if not models.AdConfigs.query.filter_by(setting='Administrative Group').first():
+        ad_admin_group = models.AdConfigs()
+        ad_admin_group.setting = 'Administrative Group'
         db.session.add(ad_admin_group)
 
-    if not models.Configs.query.filter_by(setting='AD Users Group').first():
-        ad_group = models.Configs()
-        ad_group.setting = 'AD Users Group'
-        ad_group.regex = '^(.*)$'
+    if not models.AdConfigs.query.filter_by(setting='Users Group').first():
+        ad_group = models.AdConfigs()
+        ad_group.setting = 'Users Group'
         db.session.add(ad_group)
 
     if not models.Admins.query.first():
@@ -177,12 +178,12 @@ class AD(object):
     def __init__(self):
         """ The constructor that initializes the ldap_connection object
         """
-        self.ldap_server = models.Configs().query.filter_by(setting='AD Server LDAP String').first().value
-        self.domain = models.Configs().query.filter_by(setting='AD Domain').first().value
-        self.ldap_svc_user = models.Configs().query.filter_by(setting='AD Service Account Username').first().value
-        self.ldap_svc_password = models.Configs().query.filter_by(setting='AD Service Account Password').first().value
-        self.ldap_admin_group = models.Configs().query.filter_by(setting='AD Administrative Group').first().value
-        self.ldap_users_group = models.Configs().query.filter_by(setting='AD Users Group').first().value
+        self.ldap_server = models.AdConfigs().query.filter_by(setting='LDAP String').first().value
+        self.domain = models.Configs().query.filter_by(setting='Domain').first().value
+        self.ldap_svc_user = models.Configs().query.filter_by(setting='Service Account Username').first().value
+        self.ldap_svc_password = models.Configs().query.filter_by(setting='Service Account Password').first().value
+        self.ldap_admin_group = models.Configs().query.filter_by(setting='Administrative Group').first().value
+        self.ldap_users_group = models.Configs().query.filter_by(setting='Users Group').first().value
 
         if self.ldap_server and self.domain and self.ldap_users_group \
                 and self.ldap_svc_user and self.ldap_svc_password:

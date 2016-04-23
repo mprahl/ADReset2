@@ -78,7 +78,12 @@ class Configs(db.Model):
     def to_json(self):
         """ Returns the database row in JSON
         """
-        return {'id': self.id, 'setting': self.setting, 'value': self.value, 'regex': self.regex}
+        rv = {'id': self.id, 'setting': self.setting, 'regex': self.regex}
+        if self.setting == 'AD Service Account Password' and self.value:
+            rv['value'] = 'set'
+        else:
+            rv['value'] = self.value
+        return rv
 
     def from_json(self, json):
         """ Returns a database row from JSON input
@@ -95,4 +100,38 @@ class Configs(db.Model):
         self.setting = json['setting']
         self.value = json['value']
         self.regex = json['regex']
+        return self
+
+
+class AdConfigs(db.Model):
+    """ Table to store AD configuration items
+    """
+
+    __tablename__ = 'adreset2_ad_configuration'
+    id = db.Column(db.Integer, primary_key=True)
+    setting = db.Column(db.String(128), unique=True)
+    value = db.Column(db.String(512))
+
+    def to_json(self):
+        """ Returns the database row in JSON
+        """
+        rv = {'id': self.id, 'setting': self.setting, 'regex': self.regex}
+        if self.setting == 'AD Service Account Password' and self.value:
+            rv['value'] = 'set'
+        else:
+            rv['value'] = self.value
+        return rv
+
+    def from_json(self, json):
+        """ Returns a database row from JSON input
+        """
+        if not json.get('setting', None):
+            raise ValidationError('The setting was not specified')
+        if not json.get('value', None):
+            raise ValidationError('The value of the setting was not specified')
+        if self.query.filter_by(setting=json['setting']).first() is not None:
+            raise ValidationError('The setting "{0}" already exists'.format(
+                json['setting']))
+        self.setting = json['setting']
+        self.value = json['value']
         return self

@@ -45,7 +45,7 @@ def unauthorized_callback():
 @login_required
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', authenticated=current_user.is_authenticated)
+    return render_template('index.html', title='ADReset2 Dashboard', authenticated=current_user.is_authenticated)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -68,13 +68,21 @@ def login():
 
     return redirect(url_for('login'))
 
+
 @app.route('/logout', methods=["GET"])
 def logout():
-    """
-    Logs current user out
+    """ Logs out the current user
     """
     if current_user.is_authenticated:
         logout_user()
         flash('Successfully logged out', 'success')
 
     return redirect(url_for('login'))
+
+
+@app.route('/configs', methods=['GET'])
+@login_required
+def configs_ui():
+    """ Displays the app's configurations
+    """
+    return render_template('configs.html', title='ADReset2 App Configuration', authenticated=current_user.is_authenticated)

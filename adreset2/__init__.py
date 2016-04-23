@@ -16,4 +16,7 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+from apiv1 import apiv1
+app.register_blueprint(apiv1)
+
 from adreset2 import views, models

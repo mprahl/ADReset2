@@ -1,0 +1,152 @@
+// Sets the event listeners in the dynamic table
+function configEventListeners () {
+    var configBoolItems = $('a.configBool');
+    var configTextItems = $('a.configText');
+    var configLogFile = $('a.configLogFile');
+    var configPassword = $('a.configPassword');
+
+    configBoolItems.unbind();
+    configBoolItems.tooltip();
+    configBoolItems.editable({
+        type: 'select',
+        showbuttons: false,
+        source: [
+              {value: 'True', text: 'True'},
+              {value: 'False', text: 'False'}
+        ],
+    });
+
+    configTextItems.unbind();
+    configTextItems.tooltip();
+    configTextItems.editable({
+        display: function (value) {
+            $(this).html(filterText(value));
+        }
+    });
+
+    configPassword.unbind();
+    configPassword.tooltip();
+    configPassword.editable({
+        type: 'password',
+        display: function (value) {
+            if (value) {
+                $(this).html('••••••••');
+            }
+            else {
+                $(this).html('');
+            }
+        }
+    });
+
+    configLogFile.unbind();
+    configLogFile.tooltip();
+    configLogFile.editable({
+        success: function () {
+            // Sets the Change Auditing to True in the UI
+            $('td:contains("Change Auditing")').next('td').children('a').text('True');
+            addStatusMessage('success', 'The setting was changed successfully');
+        },
+        display: function (value) {
+            $(this).html(filterText(value));
+        }
+    });
+}
+
+
+// Loads the dynamic table and pagination
+function fillInTable () {
+    // Set the loading spinner
+    manageSpinner(true);
+
+    // If the page was specified in the URL, then add it to the API url
+    var urlVars = getUrlVars();
+    'page' in urlVars ? apiURL = '/api/v1/configs?page=' + urlVars['page'] : apiURL = '/api/v1/configs';
+
+    // Query the API
+    $.getJSON(apiURL, function (result) {
+
+        var i = 1;
+        // For each item, add a row, but if the row exists, just change the value
+        $.each(result['items'], function (j, item) {
+            var tableRow = $('#dynamicTableRow' + String(i));
+            var html = '';
+            var boolConfigItems = [
+                'Login Auditing',
+                'Change Auditing'
+            ];
+
+            if (item.setting == 'Log File') {
+                var cssClass = 'configLogFile'
+            }
+            else if (item.setting == 'AD Service Account Password') {
+                var cssClass = 'configPassword'
+            }
+            else if ($.inArray(item.setting, boolConfigItems) != -1) {
+                var cssClass = 'configBool'
+            }
+            else {
+                var cssClass = 'configText'
+            }
+
+            tableRow.length == 0 ? html += '<tr id="dynamicTableRow' + String(i) + '">' : null;
+            html += '<td data-title="Setting: ">' + filterText(item.setting) + '</td>\
+                    <td data-title="Value: "><a href="#" class="' + cssClass + '" data-pk="' + item.id + '" data-url="/api/v1/configs/' + item.id + '" title="Click to change the setting value">' + (item.value != null ? filterText(item.value) : '') + '</a></td>';
+            tableRow.length == 0 ? html += '</tr>' : null;
+            tableRow.length == 0 ? appendTableRow(html) : tableRow.html(html);
+
+            i++;
+        });
+
+        // Clean up the table
+        removeEmptyTableRows(i);
+        // Set the pagination
+        result['meta']['pages'] == 0 ? pages = 1 : pages = result['meta']['pages'];
+        setPagination(result['meta']['page'], pages, 'configs');
+        //Activate x-editable on new elements and other events
+        configEventListeners();
+        // Remove the loading spinner
+        manageSpinner(false);
+    })
+    .fail(function (jqxhr, textStatus, error) {
+        // Remove the loading spinner
+        manageSpinner(false);
+        // If the resource is not found, then redirect to the last page
+        if (error == 'NOT FOUND') {
+            redirectToLastPage('configs');
+        }
+    });
+}
+
+
+$(document).ready(function () {
+    // This stops the browser from caching AJAX (fixes IE)
+    $.ajaxSetup({ cache: false });
+
+    // Set the defaults for x-editable
+    $.fn.editable.defaults.mode = 'inline';
+    $.fn.editable.defaults.emptytext = 'Not set';
+    $.fn.editable.defaults.anim = 100;
+    $.fn.editable.defaults.type = 'text';
+    $.fn.editable.defaults.ajaxOptions = {
+        type: 'PUT',
+        dataType: 'JSON',
+        contentType: 'application/json'
+    };
+    $.fn.editable.defaults.params = function (params) {
+        return JSON.stringify({ 'value': params.value })
+    };
+    $.fn.editable.defaults.error = function (response) {
+        addStatusMessage('error', filterText(jQuery.parseJSON(response.responseText).message));
+    };
+    $.fn.editable.defaults.success = function () {
+        addStatusMessage('success', 'The setting was changed successfully');
+    };
+
+    // Populate the table
+    fillInTable();
+
+    // When hitting the back/forward buttons, reload the table
+    $(window).bind("popstate", function () {
+        fillInTable();
+    });
+});
