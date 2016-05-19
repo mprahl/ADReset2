@@ -29,6 +29,11 @@ nav a:hover {
     padding: 0px !important;
 }
 
+.emphasize {
+    font-weight: bold;
+    font-size: 110%;
+}
+
 #bottomOuterAlertDiv {
     position: fixed;
     bottom: 0;
@@ -145,11 +150,39 @@ ul.pagination li.disabled a:hover {
 }
 /* End of Manage Page CSS */
 
-/* Only Configs Page CSS */
+/* Start of Configs Page CSS */
 #settingHeader, #valueHeader {
     width: 50%;
 }
-/* End of Only Configs Page CSS */
+/* End of Configs Page CSS */
+
+/* AD Config Page CSS */
+.configPanelBody {
+    margin: 0.5em 0.5em 1em 0.5em;
+}
+
+.configPanelBody p {
+    margin-bottom: 1em;
+}
+
+.configPanelBody input {
+    max-width: 700px;
+}
+
+.configPanelBody a.tool-tip:hover {
+    text-decoration: none !important;
+}
+
+#configPanelButtonDiv {
+    margin-top: 1em;
+    padding-left: 0px;
+}
+
+#configPanelButtonDiv button {
+    margin-right: 0.5em;
+    width: 82.5px;
+}
+/* End of AD Config Page CSS */
 
 @media(max-width:767px) {
 
@@ -290,4 +323,19 @@ ul.pagination li.disabled a:hover {
         margin: auto;
     }
     /* End of Login Page CSS */
+
+    /* AD Config Page CSS */
+    .configPanel {
+        width: 85%;
+        margin: auto;
+    }
+
+    .configPanelBody div.col-lg-2 {
+        text-align: right;
+    }
+
+    #configPanelButtonDiv {
+        padding-left: 5px;
+    }
+    /* End of AD Config Page CSS */
 }

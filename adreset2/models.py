@@ -113,25 +113,28 @@ class AdConfigs(db.Model):
     value = db.Column(db.String(512))
 
     def to_json(self):
-        """ Returns the database row in JSON
+        """ Returns the database row in JSON but strips out the password
         """
-        rv = {'id': self.id, 'setting': self.setting, 'regex': self.regex}
-        if self.setting == 'AD Service Account Password' and self.value:
-            rv['value'] = 'set'
-        else:
+        rv = {'id': self.id, 'setting': self.setting}
+        if self.setting != 'password' and self.value:
             rv['value'] = self.value
         return rv
 
-    def from_json(self, json):
-        """ Returns a database row from JSON input
+    def from_key_pair(self, setting, value):
+        """ Returns a list of database rows from JSON input
         """
-        if not json.get('setting', None):
+        if not setting:
             raise ValidationError('The setting was not specified')
-        if not json.get('value', None):
+        if setting not in ['domain_controller', 'port', 'domain', 'username', 'password']:
+            raise ValidationError('"{0}" is an invalid parameter'.format(setting))
+        if not value:
             raise ValidationError('The value of the setting was not specified')
-        if self.query.filter_by(setting=json['setting']).first() is not None:
-            raise ValidationError('The setting "{0}" already exists'.format(
-                json['setting']))
-        self.setting = json['setting']
-        self.value = json['value']
-        return self
+
+        setting_result = self.query.filter_by(setting=setting).first()
+        if setting_result:
+            setting.value = value
+            return setting
+        else:
+            self.setting = setting
+            self.value = value
+            return self

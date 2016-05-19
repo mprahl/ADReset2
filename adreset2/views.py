@@ -85,4 +85,15 @@ def logout():
 def configs_ui():
     """ Displays the app's configurations
     """
-    return render_template('configs.html', title='ADReset2 App Configuration', authenticated=current_user.is_authenticated)
+    return render_template('configs.html', title='ADReset2 App Configuration',
+                           authenticated=current_user.is_authenticated)
+
+
+@app.route('/ad_configs', methods=['GET'])
+@login_required
+def ad_configs_ui():
+    """ Displays the app's configurations
+    """
+    return render_template('ad_configs.html', title='ADReset2 Active Directory Configuration',
+                           authenticated=current_user.is_authenticated)
+

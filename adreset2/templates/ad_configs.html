@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <script src="{{ url_for('static', filename='js/ad_configs.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <h2 class="textHeadingManageNoFilter">Active Directory Connection Settings</h2>
+</div>
+<div class="row">
+    <div class="panel panel-default configPanel">
+        <div class="panel-heading">
+            <h3 class="panel-title">Active Directory Connection Settings</h3>
+        </div>
+        <div class="panel-body configPanelBody">
+            <p class="emphasize">Enter the connection information below:</p>
+            <form class="form-horizontal">
+                <fieldset>
+                    <div class="form-group">
+                        <div class="col-lg-2">
+                            <label class="control-label" for="inputDomainController">
+                                <a class="tool-tip" data-toggle="tooltip" data-original-title="Enter the Domain Controller name here. An example would be 'dcroundrobin.example.local'.">Domain Controller:</a>
+                            </label>
+                        </div>
+                        <div class="col-lg-10">
+                            <input class="form-control" id="inputDomainController" type="text" placeholder="Domain Controller"/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-lg-2">
+                            <label class="control-label" for="inputPort">
+                                <a class="tool-tip" data-toggle="tooltip" data-original-title="Enter the LDAPS port here. The default in Active Directory is '636'.">LDAPS Port:</a>
+                            </label>
+                        </div>
+                        <div class="col-lg-10">
+                            <input class="form-control" id="inputPort" type="text" placeholder="Port (i.e. 636)"/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-lg-2">
+                            <label class="control-label" for="inputDomainName">
+                                <a class="tool-tip" data-toggle="tooltip" data-original-title="Enter the name of the Domain that will be used for this application. An example would 'example.local'.">Domain Name:</a>
+                            </label>
+                        </div>
+                        <div class="col-lg-10">
+                            <input class="form-control" id="inputDomainName" type="text" placeholder="Domain Name"/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-lg-2">
+                            <label class="control-label" for="inputUsername">
+                                <a class="tool-tip" data-toggle="tooltip" data-original-title="Enter the username that will be used to connect to Active Directory and reset passwords. An example would be 'svcAdReset'.">Username:</a>
+                            </label>
+                        </div>
+                        <div class="col-lg-10">
+                            <input class="form-control" id="inputUsername" type="text" placeholder="Service account username"/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-lg-2">
+                            <label class="control-label" for="inputPassword">
+                                <a class="tool-tip" data-toggle="tooltip" data-original-title="Enter the password for the service account entered above.">Password:</a>
+                            </label>
+                        </div>
+                        <div class="col-lg-10">
+                            <input class="form-control" id="inputPassword" type="password" placeholder="Service account password"/>
+                        </div>
+                    </div>
+                    <div id="configPanelButtonDiv" class="col-lg-10 col-lg-offset-2">
+                        <button class="btn btn-primary" type="submit" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>">Update</button>
+                        <button class="btn btn-default" type="reset">Reset</button>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <ul class="pagination hidden" id="pagination"></ul>
+</div>
+{% endblock %}

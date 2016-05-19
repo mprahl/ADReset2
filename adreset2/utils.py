@@ -70,34 +70,14 @@ def add_default_configuration_settings():
         log_file.regex = '^(.+)$'
         db.session.add(log_file)
 
-    if not models.AdConfigs.query.filter_by(setting='LDAP String').first():
-        ad_server = models.AdConfigs()
-        ad_server.setting = 'LDAP String'
-        db.session.add(ad_server)
-
-    if not models.AdConfigs.query.filter_by(setting='Domain Name').first():
-        ad_domain = models.AdConfigs()
-        ad_domain.setting = 'Domain Name'
-        db.session.add(ad_domain)
-
-    if not models.AdConfigs.query.filter_by(setting='Service Account Username').first():
-        ad_svc_user = models.AdConfigs()
-        ad_svc_user.setting = 'Service Account Username'
-        db.session.add(ad_svc_user)
-
-    if not models.AdConfigs.query.filter_by(setting='Service Account Password').first():
-        ad_svc_password = models.AdConfigs()
-        ad_svc_password.setting = 'AD Service Account Password'
-        db.session.add(ad_svc_password)
-
-    if not models.AdConfigs.query.filter_by(setting='Administrative Group').first():
-        ad_admin_group = models.AdConfigs()
-        ad_admin_group.setting = 'Administrative Group'
+    if not models.Configs.query.filter_by(setting='AD Administrative Group').first():
+        ad_admin_group = models.Configs()
+        ad_admin_group.setting = 'AD Administrative Group'
         db.session.add(ad_admin_group)
 
-    if not models.AdConfigs.query.filter_by(setting='Users Group').first():
-        ad_group = models.AdConfigs()
-        ad_group.setting = 'Users Group'
+    if not models.Configs.query.filter_by(setting='AD Users Group').first():
+        ad_group = models.Configs()
+        ad_group.setting = 'AD Users Group'
         db.session.add(ad_group)
 
     if not models.Admins.query.first():
@@ -165,6 +145,40 @@ def get_wtforms_errors(form):
     return error_messages
 
 
+def try_ad_connection(dc, port, domain, username, password):
+    """ Returns a boolean based on if the connection to Active Directory is successful
+    """
+    ldap_server = 'LDAPS://{0}:{1}'.format(dc, port)
+
+    if dc and port and domain and username and password:
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        ldap_connection = ldap.initialize(ldap_server)
+        ldap_connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+        # Turn off referrals
+        ldap_connection.set_option(ldap.OPT_REFERRALS, 0)
+
+        if '@' in username or '\\' in username or search('CN=', username, IGNORECASE):
+            bind_username = username
+        else:
+            bind_username = username + '@' + domain
+
+        try:
+            ldap_connection.simple_bind_s(
+                bind_username,
+                password
+            )
+            return True
+
+        except ldap.INVALID_CREDENTIALS:
+            raise ADException('The username or password was incorrect')
+        except ldap.SERVER_DOWN:
+            raise ADException('The LDAP server could not be contacted')
+        except Exception:
+            raise ADException('The connection to the LDAP server failed')
+
+    return False
+
+
 class AD(object):
     """ A class that handles all the Active Directory tasks for the Flask app
     """
@@ -178,27 +192,22 @@ class AD(object):
     def __init__(self):
         """ The constructor that initializes the ldap_connection object
         """
-        self.ldap_server = models.AdConfigs().query.filter_by(setting='LDAP String').first().value
-        self.domain = models.Configs().query.filter_by(setting='Domain').first().value
-        self.ldap_svc_user = models.Configs().query.filter_by(setting='Service Account Username').first().value
-        self.ldap_svc_password = models.Configs().query.filter_by(setting='Service Account Password').first().value
-        self.ldap_admin_group = models.Configs().query.filter_by(setting='Administrative Group').first().value
-        self.ldap_users_group = models.Configs().query.filter_by(setting='Users Group').first().value
+        dc = models.AdConfigs().query.filter_by(setting='domain_controller').first().value
+        port = models.AdConfigs().query.filter_by(setting='port').first().value
+        self.domain = models.AdConfigs().query.filter_by(setting='domain').first().value
+        self.ldap_svc_user = models.AdConfigs().query.filter_by(setting='username').first().value
+        self.ldap_svc_password = models.AdConfigs().query.filter_by(setting='password').first().value
+        self.ldap_admin_group = models.Configs().query.filter_by(setting='AD Administrative Group').first().value
+        self.ldap_users_group = models.Configs().query.filter_by(setting='AD Users Group').first().value
 
-        if self.ldap_server and self.domain and self.ldap_users_group \
-                and self.ldap_svc_user and self.ldap_svc_password:
+        if dc and port and self.domain and self.ldap_svc_user and self.ldap_svc_password:
 
-            if search('LDAPS:\/\/(.*?)\:\d+', self.ldap_server, IGNORECASE):
-                ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
-
-                self.ldap_connection = ldap.initialize(self.ldap_server)
-                self.ldap_connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
-                # Turn off referrals
-                self.ldap_connection.set_option(ldap.OPT_REFERRALS, 0)
-            else:
-                json_logger('error', 'NA',
-                            'The AD server LDAP string isn\'t properly formatted or isn\'t using LDAPS')
-                raise ADException('The Active Directory server could not be contacted')
+            self.ldap_server = 'LDAPS://{0}:{1}'.format(dc, port)
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+            self.ldap_connection = ldap.initialize(self.ldap_server)
+            self.ldap_connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+            # Turn off referrals
+            self.ldap_connection.set_option(ldap.OPT_REFERRALS, 0)
         else:
             json_logger('error', 'NA', 'An Active Directory connection attempt was made but not all the required \
                 settings were configured')
