@@ -192,17 +192,22 @@ class AD(object):
     def __init__(self):
         """ The constructor that initializes the ldap_connection object
         """
-        dc = models.AdConfigs().query.filter_by(setting='domain_controller').first().value
-        port = models.AdConfigs().query.filter_by(setting='port').first().value
-        self.domain = models.AdConfigs().query.filter_by(setting='domain').first().value
-        self.ldap_svc_user = models.AdConfigs().query.filter_by(setting='username').first().value
-        self.ldap_svc_password = models.AdConfigs().query.filter_by(setting='password').first().value
-        self.ldap_admin_group = models.Configs().query.filter_by(setting='AD Administrative Group').first().value
-        self.ldap_users_group = models.Configs().query.filter_by(setting='AD Users Group').first().value
+        dc = models.AdConfigs().query.filter_by(setting='domain_controller').first()
+        port = models.AdConfigs().query.filter_by(setting='port').first()
+        domain = models.AdConfigs().query.filter_by(setting='domain').first()
+        ldap_svc_user = models.AdConfigs().query.filter_by(setting='username').first()
+        ldap_svc_password = models.AdConfigs().query.filter_by(setting='password').first()
+        ldap_admin_group = models.Configs().query.filter_by(setting='AD Administrative Group').first()
+        ldap_users_group = models.Configs().query.filter_by(setting='AD Users Group').first()
 
-        if dc and port and self.domain and self.ldap_svc_user and self.ldap_svc_password:
+        if dc and port and domain and ldap_svc_user and ldap_svc_password:
+            self.domain = domain.value
+            self.ldap_svc_user = ldap_svc_user.value
+            self.ldap_svc_password = ldap_svc_password.value
+            self.ldap_admin_group = ldap_admin_group.value
+            self.ldap_users_group = ldap_users_group.value
 
-            self.ldap_server = 'LDAPS://{0}:{1}'.format(dc, port)
+            self.ldap_server = 'LDAPS://{0}:{1}'.format(dc.value, port.value)
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
             self.ldap_connection = ldap.initialize(self.ldap_server)
             self.ldap_connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
@@ -253,7 +258,7 @@ class AD(object):
     def svc_account_login(self):
         """ Logs in using the service account defined in the database
         """
-        self.login(self.ldap_svc_user, self.ldap_svc_password)
+        return self.login(self.ldap_svc_user, self.ldap_svc_password)
 
     def get_loggedin_user(self):
         """ Returns the logged in username without the domain
@@ -310,7 +315,7 @@ class AD(object):
                 return search_result[0][1][attribute][0]
 
             json_logger('error', 'NA',
-                        'The attribute "{0}" of the user "{1}" could not be found').format(attribute, sAMAccountName)
+                        'The attribute "{0}" of the user "{1}" could not be found'.format(attribute, sAMAccountName))
         else:
             json_logger('error', 'NA', 'The attribute of a user could not be found because \
                 the AD object is not authenticated to Active Directory')
@@ -351,24 +356,24 @@ class AD(object):
         """
         return self.get_ldap_attribute(sAMAccountName, 'mail')
 
-    def get_nested_group_members(self, group_distinguishedName):
-        """ Gets the members and nested members of a group by supplying a distinguishedName for the group.
-        A list with the members will be returned
+    def check_if_nested_group_member(self, user_sAMAccountName, group_distinguishedName):
+        """ Checks the members and nested members of a group by supplying a distinguishedName for the group and a
+        user's sAMAccountName. A boolean based on membership will be returned
         """
         # Check if the ldap_connection is in a logged in state
         if self.ldap_connection.whoami_s():
-            group_members = list()
 
-            if group_distinguishedName:
+            if user_sAMAccountName and group_distinguishedName:
+                user_dn = self.get_distinguished_name(user_sAMAccountName)
                 # Get the base distinguished name based on the domain name
                 base_dn = 'dc=' + (self.domain.replace('.', ',dc='))
                 search_filter = '(memberOf:1.2.840.113556.1.4.1941:={0})'.format(group_distinguishedName)
                 search_result = self.ldap_connection.search_s(base_dn, ldap.SCOPE_SUBTREE,
                                                               search_filter, ['distinguishedName'])
                 for member in search_result:
-                    if member[0]:
-                        group_members.append(member[0])
-            return group_members
+                    if user_dn == member[0]:
+                        return True
+            return False
         else:
             raise ADException('You must be logged into LDAP to search')
 
@@ -393,22 +398,12 @@ class AD(object):
         else:
             raise ADException('You must be logged into LDAP to search')
 
-    def check_group_membership(self, ldap_group):
+    def check_group_membership(self, username, ldap_group):
         """ Checks the group membership of the logged on user. This will return True if the user is a member of
         the Administrator group set in the database
         """
         # Check if the ldap_connection is in a logged in state
         if self.ldap_connection.whoami_s():
-            # AD returns the username as DOMAIN\username, so this gets the sAMAccountName
-            username = sub(r'(^.*(?<=\\))', '', self.ldap_connection.whoami_s())
-            # Get the distinguished name of the logged in user
-            user_distinguished_name = self.get_distinguished_name(username)
-
-            if not user_distinguished_name:
-                json_logger(
-                    'error', username,
-                    'The LDAP user "{0}" authenticated but could not be found'.format(username))
-                raise ADException('There was an error searching LDAP. Please try again.')
             # Get the distinguished name of the admin group in the database
             group_distinguished_name = self.get_distinguished_name(ldap_group)
 
@@ -418,10 +413,8 @@ class AD(object):
                     'The Active Directory group "{0}" could not be found'.format(ldap_group))
                 raise ADException('There was an error searching LDAP. Please try again.')
 
-            group_members = self.get_nested_group_members(group_distinguished_name)
-            for member in group_members:
-                if user_distinguished_name == member:
-                    return True
+            if self.check_if_nested_group_member(username, group_distinguished_name):
+                return True
 
             # If the user was not a member of the group, check to see if the admin group is the primary group
             # of the user which is not included in memberOf (this is typically Domain Users)

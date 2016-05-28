@@ -37,4 +37,4 @@ def not_found_error(e):
     return not_found('item not found')
 
 
-from . import configs, ad_configs
+from . import configs, ad_config

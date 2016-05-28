@@ -37,7 +37,7 @@ function removeFormErrors() {
 function setAdConnectionSettings(domain_controller, port, domain, username, password) {
 
     $.ajax({
-        url: '/api/v1/ad_configs',
+        url: '/api/v1/ad_config',
         type: 'post',
         dataType: 'json',
         contentType: 'application/json',
@@ -65,7 +65,7 @@ function setAdConnectionSettings(domain_controller, port, domain, username, pass
 
 function getAdConnectionSettings() {
 
-    $.getJSON('/api/v1/ad_configs', function (result) {
+    $.getJSON('/api/v1/ad_config', function (result) {
         $.each(result['items'], function (j, item) {
             if (item['setting'] === 'domain_controller') {
                 _domain_controller.val(item['value']);

@@ -89,11 +89,11 @@ def configs_ui():
                            authenticated=current_user.is_authenticated)
 
 
-@app.route('/ad_configs', methods=['GET'])
+@app.route('/ad_config', methods=['GET'])
 @login_required
-def ad_configs_ui():
+def ad_config_ui():
     """ Displays the app's configurations
     """
-    return render_template('ad_configs.html', title='ADReset2 Active Directory Configuration',
+    return render_template('ad_config.html', title='ADReset2 Active Directory Configuration',
                            authenticated=current_user.is_authenticated)
 

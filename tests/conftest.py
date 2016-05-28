@@ -26,12 +26,26 @@ def initialize():
 
     return False
 
-# Create a fresh database
-initialize()
+
+# Reinitialize the database before each test
+@pytest.yield_fixture(autouse=True)
+def run_before_tests():
+    # Code that runs before each test
+    initialize()
+    # A test function will be run at this point
+    yield
 
 
 @pytest.fixture(scope='module')
 def loggedin_client():
     client = app.test_client()
-
+    client.post(
+        '/login',
+        data=dict(
+            username='admin',
+            password='ADReset2',
+            auth_source='ADReset2 User'
+        ),
+        follow_redirects=True
+    )
     return client

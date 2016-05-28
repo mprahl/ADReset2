@@ -132,8 +132,8 @@ class AdConfigs(db.Model):
 
         setting_result = self.query.filter_by(setting=setting).first()
         if setting_result:
-            setting.value = value
-            return setting
+            setting_result.value = value
+            return setting_result
         else:
             self.setting = setting
             self.value = value
