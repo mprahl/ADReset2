@@ -14,6 +14,14 @@ class ValidationError(ValueError):
     pass
 
 
+class ConfigurationError(ValueError):
+    """A custom exception handled by Flask to denote a bad configuration."""
+
+
+class ADError(ValueError):
+    """A custom exception handled by Flask to denote an error with Active Directory."""
+
+
 def json_error(error):
     """
     Convert exceptions to JSON responses.

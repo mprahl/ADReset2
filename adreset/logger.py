@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import logging
 import sys
 
+from pythonjsonlogger import jsonlogger
+
 
 def log_to_stdout(level=logging.INFO):
     """
@@ -12,11 +14,11 @@ def log_to_stdout(level=logging.INFO):
 
     :param int level: the logging level
     """
-    fmt = '%(asctime)s %(name)s %(levelname)s %(message)s'
+    fmt = '%(asctime)s %(name)s %(levelname)s %(user)s %(message)s'
     datefmt = '%Y-%m-%d %H:%M:%S'
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setLevel(level)
-    stream_handler.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
+    stream_handler.setFormatter(jsonlogger.JsonFormatter(fmt, datefmt=datefmt))
     logging.getLogger().addHandler(stream_handler)
 
 

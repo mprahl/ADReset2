@@ -1,1 +1,5 @@
 Flask
+flask-jwt-extended
+ldap3
+python-json-logger
+six

@@ -13,7 +13,9 @@ class Config(object):
     PRODUCTION = False
     SHOW_DB_URI = False
     SECRET_KEY = 'replace-me-with-something-random'
+    JWT_SECRET_KEY = 'replace-me-with-something-random'
     CORS_URL = '*'
+    AD_USE_NTLM = True
 
 
 class ProdConfig(Config):
@@ -32,4 +34,7 @@ class DevConfig(Config):
 class TestConfig(Config):
     """The test ADReset application configuration."""
 
-    pass
+    # ldap3 mocking doesn't support NTLM
+    AD_USE_NTLM = False
+    AD_DOMAIN = 'adreset.local'
+    AD_LDAP_URI = 'ldaps://server.domain.local:636'

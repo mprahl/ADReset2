@@ -5,10 +5,11 @@ from __future__ import unicode_literals
 import os
 
 from flask import Flask, current_app
+from flask_jwt_extended import JWTManager
 from werkzeug.exceptions import default_exceptions
 
 from adreset.logger import init_logging
-from adreset.error import json_error, ValidationError
+from adreset.error import json_error, ValidationError, ConfigurationError, ADError
 from adreset.api.v1 import api_v1
 
 
@@ -56,19 +57,25 @@ def create_app(config_obj=None):
     :rtype: flask.Flask
     """
     app = Flask(__name__)
+    JWTManager(app)
     if config_obj:
         app.config.from_object(config_obj)
     else:
         load_config(app)
 
-    if app.config['PRODUCTION'] and app.secret_key == 'replace-me-with-something-random':
-        raise Warning('You need to change the app.secret_key value for production')
+    if app.config['PRODUCTION']:
+        if app.config['SECRET_KEY'] == 'replace-me-with-something-random':
+            raise Warning('You need to change the SECRET_KEY configuration for production')
+        elif app.config['JWT_SECRET_KEY'] == 'replace-me-with-something-random':
+            raise Warning('You need to change the JWT_SECRET_KEY configuration for production')
 
     init_logging(app)
 
     for status_code in default_exceptions.keys():
         app.register_error_handler(status_code, json_error)
     app.register_error_handler(ValidationError, json_error)
+    app.register_error_handler(ConfigurationError, json_error)
+    app.register_error_handler(ADError, json_error)
     app.register_blueprint(api_v1, url_prefix='/api/v1')
 
     app.after_request(insert_headers)
