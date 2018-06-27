@@ -143,8 +143,15 @@ class AD(object):
         :rtype: str
         """
         if self.connection.bound:
-            # AD returns the username as DOMAIN\username, so this gets the sAMAccountName
-            return self.connection.extend.standard.who_am_i().split('\\')[-1]
+            user = self.connection.extend.standard.who_am_i()
+            if not self._get_config('TESTING', raise_exc=False):
+                # AD returns the username as DOMAIN\username, so this gets the sAMAccountName
+                return user.split('\\')[-1]
+            else:
+                # We are using ldap3's mocking, which returns the distinguished name, so derive the
+                # sAMAccountName from that
+                return user.split('CN=')[-1].split(',')[0]
+
         elif raise_exc:
             self.log('error', 'You must be logged in to get the logged in user\'s username')
             raise ADError(self.unknown_error_msg)

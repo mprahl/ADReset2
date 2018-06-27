@@ -1,4 +1,6 @@
 Flask
+Flask-Migrate
+Flask-SQLAlchemy
 flask-jwt-extended
 ldap3
 python-json-logger

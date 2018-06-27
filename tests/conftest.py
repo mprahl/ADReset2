@@ -9,17 +9,26 @@ from mock import patch, PropertyMock
 import pytest
 
 from adreset.app import create_app
+from adreset.models import db
 import adreset.ad
 
 
 @pytest.fixture(scope='session')
 def app():
-    """Pytest fixture that creates a Flask app object with an established a context."""
+    """Pytest fixture that creates a Flask app object with an established context."""
     app = create_app('adreset.config.TestConfig')
     ctx = app.app_context()
     ctx.push()
     yield app
     ctx.pop()
+
+
+@pytest.fixture(autouse=True)
+def setup_db(app):
+    """Reinitialize the database before each test."""
+    db.session.remove()
+    db.drop_all()
+    db.create_all()
 
 
 @pytest.fixture(scope='session')

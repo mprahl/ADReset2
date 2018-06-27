@@ -277,7 +277,7 @@
                     "1601-01-01 00:00:00+00:00"
                 ],
                 "displayName": "Test User",
-                "distinguishedName": "CN=Test User,OU=ADReset,DC=adreset,DC=local",
+                "distinguishedName": "CN=testuser,OU=ADReset,DC=adreset,DC=local",
                 "givenName": "Test",
                 "instanceType": 4,
                 "lastLogoff": "1601-01-01 00:00:00+00:00",
@@ -300,18 +300,18 @@
                 "objectSid": "S-1-5-21-1270288957-3800934213-3019856503-1608",
                 "primaryGroupID": 513,
                 "pwdLastSet": "2016-10-31 23:03:11.741022+00:00",
-                "sAMAccountName": "testUser",
+                "sAMAccountName": "testuser",
                 "sAMAccountType": 805306368,
                 "sn": "User",
                 "uSNChanged": 86130,
                 "uSNCreated": 86116,
                 "userAccountControl": 66048,
-                "userPrincipalName": "testUser@adreset.local",
+                "userPrincipalName": "testuser@adreset.local",
                 "userPassword": "P@ssW0rd",
                 "whenChanged": "2016-10-31 23:03:49+00:00",
                 "whenCreated": "2016-10-31 23:03:11+00:00"
             },
-            "dn": "CN=Test User,OU=ADReset,DC=adreset,DC=local",
+            "dn": "CN=testuser,OU=ADReset,DC=adreset,DC=local",
             "raw": {
                 "accountExpires": [
                     "9223372036854775807"
@@ -338,7 +338,7 @@
                     "Test User"
                 ],
                 "distinguishedName": [
-                    "CN=Test User,OU=ADReset,DC=adreset,DC=local"
+                    "CN=testuser,OU=ADReset,DC=adreset,DC=local"
                 ],
                 "givenName": [
                     "Test"
@@ -393,7 +393,7 @@
                     "131224285917410224"
                 ],
                 "sAMAccountName": [
-                    "testUser"
+                    "testuser"
                 ],
                 "sAMAccountType": [
                     "805306368"
@@ -414,7 +414,7 @@
                     "P@ssW0rd"
                 ],
                 "userPrincipalName": [
-                    "testUser@adreset.local"
+                    "testuser@adreset.local"
                 ],
                 "whenChanged": [
                     "20161031230349.0Z"
@@ -429,14 +429,14 @@
                 "accountExpires": "9999-12-31 23:59:59.999999",
                 "badPasswordTime": "1601-01-01 00:00:00+00:00",
                 "badPwdCount": 0,
-                "cn": "testUser2",
+                "cn": "testuser2",
                 "codePage": 0,
                 "countryCode": 0,
                 "displayName": "",
                 "dSCorePropagationData": [
                     "1601-01-01 00:00:00+00:00"
                 ],
-                "distinguishedName": "CN=testUser2,OU=ADReset,DC=adreset,DC=local",
+                "distinguishedName": "CN=testuser2,OU=ADReset,DC=adreset,DC=local",
                 "instanceType": 4,
                 "lastLogoff": "1601-01-01 00:00:00+00:00",
                 "lastLogon": "1601-01-01 00:00:00+00:00",
@@ -444,7 +444,7 @@
                 "memberOf": [
                     "CN=Some Group,OU=Groups,DC=adreset,DC=local"
                 ],
-                "name": "testUser2",
+                "name": "testuser2",
                 "objectCategory": "CN=Person,CN=Schema,CN=Configuration,DC=adreset,DC=local",
                 "objectClass": [
                     "top",
@@ -456,17 +456,17 @@
                 "objectSid": "S-1-5-21-1270288957-3800934213-3019856503-1609",
                 "primaryGroupID": 1607,
                 "pwdLastSet": "2016-10-31 23:03:42.553682+00:00",
-                "sAMAccountName": "testUser2",
+                "sAMAccountName": "testuser2",
                 "sAMAccountType": 805306368,
                 "uSNChanged": 86156,
                 "uSNCreated": 86124,
                 "userAccountControl": 66048,
-                "userPrincipalName": "testUser2@adreset.local",
+                "userPrincipalName": "testuser2@adreset.local",
                 "userPassword": "P@ssW0rd",
                 "whenChanged": "2016-10-31 23:06:00+00:00",
                 "whenCreated": "2016-10-31 23:03:42+00:00"
             },
-            "dn": "CN=testUser2,OU=ADReset,DC=adreset,DC=local",
+            "dn": "CN=testuser2,OU=ADReset,DC=adreset,DC=local",
             "raw": {
                 "accountExpires": [
                     "9223372036854775807"
@@ -478,7 +478,7 @@
                     "0"
                 ],
                 "cn": [
-                    "testUser2"
+                    "testuser2"
                 ],
                 "codePage": [
                     "0"
@@ -490,7 +490,7 @@
                     "16010101000000.0Z"
                 ],
                 "distinguishedName": [
-                    "CN=testUser2,OU=ADReset,DC=adreset,DC=local"
+                    "CN=testuser2,OU=ADReset,DC=adreset,DC=local"
                 ],
                 "displayName": [
                     ""
@@ -511,7 +511,7 @@
                     "CN=Some Group,OU=Groups,DC=adreset,DC=local"
                 ],
                 "name": [
-                    "testUser2"
+                    "testuser2"
                 ],
                 "objectCategory": [
                     "CN=Person,CN=Schema,CN=Configuration,DC=adreset,DC=local"
@@ -541,7 +541,7 @@
                     "131224286225536819"
                 ],
                 "sAMAccountName": [
-                    "testUser2"
+                    "testuser2"
                 ],
                 "sAMAccountType": [
                     "805306368"
@@ -556,7 +556,7 @@
                     "66048"
                 ],
                 "userPrincipalName": [
-                    "testUser2@adreset.local"
+                    "testuser2@adreset.local"
                 ],
                 "userPassword": [
                     "P@ssW0rd"
@@ -581,7 +581,7 @@
                     "1601-01-01 00:00:00+00:00"
                 ],
                 "displayName": "Test User3",
-                "distinguishedName": "CN=Test User3,OU=ADReset,DC=adreset,DC=local",
+                "distinguishedName": "CN=testuser3,OU=ADReset,DC=adreset,DC=local",
                 "instanceType": 4,
                 "lastLogoff": "1601-01-01 00:00:00+00:00",
                 "lastLogon": "1601-01-01 00:00:00+00:00",
@@ -601,17 +601,17 @@
                 "objectSid": "S-1-5-21-1270288957-3800934213-3019856503-1611",
                 "primaryGroupID": 513,
                 "pwdLastSet": "2016-10-31 23:06:28.476070+00:00",
-                "sAMAccountName": "testUser3",
+                "sAMAccountName": "testuser3",
                 "sAMAccountType": 805306368,
                 "uSNChanged": 86166,
                 "uSNCreated": 86161,
                 "userAccountControl": 66048,
-                "userPrincipalName": "testUser3@adreset.local",
+                "userPrincipalName": "testuser3@adreset.local",
                 "userPassword": "P@ssW0rd",
                 "whenChanged": "2016-10-31 23:06:28+00:00",
                 "whenCreated": "2016-10-31 23:06:28+00:00"
             },
-            "dn": "CN=Test User3,OU=ADReset,DC=adreset,DC=local",
+            "dn": "CN=testuser3,OU=ADReset,DC=adreset,DC=local",
             "raw": {
                 "accountExpires": [
                     "9223372036854775807"
@@ -638,7 +638,7 @@
                     "Test User3"
                 ],
                 "distinguishedName": [
-                    "CN=Test User3,OU=ADReset,DC=adreset,DC=local"
+                    "CN=testuser3,OU=ADReset,DC=adreset,DC=local"
                 ],
                 "instanceType": [
                     "4"
@@ -686,7 +686,7 @@
                     "131224287884760706"
                 ],
                 "sAMAccountName": [
-                    "testUser3"
+                    "testuser3"
                 ],
                 "sAMAccountType": [
                     "805306368"
@@ -701,7 +701,7 @@
                     "66048"
                 ],
                 "userPrincipalName": [
-                    "testUser3@adreset.local"
+                    "testuser3@adreset.local"
                 ],
                 "userPassword": [
                     "P@ssW0rd"
@@ -827,7 +827,7 @@
                 "groupType": -2147483646,
                 "instanceType": 4,
                 "member": [
-                    "CN=Test User,OU=ADReset,DC=adreset,DC=local",
+                    "CN=testuser,OU=ADReset,DC=adreset,DC=local",
                     "CN=matth,CN=Users,DC=adreset,DC=local"
                 ],
                 "name": "ADReset Admins",
@@ -863,7 +863,7 @@
                     "4"
                 ],
                 "member": [
-                    "CN=Test User,OU=ADReset,DC=adreset,DC=local",
+                    "CN=testuser,OU=ADReset,DC=adreset,DC=local",
                     "CN=matth,CN=Users,DC=adreset,DC=local"
                 ],
                 "name": [
