@@ -19,6 +19,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'replace-me-with-something-random'
     JWT_SECRET_KEY = 'replace-me-with-something-random'
+    JWT_ERROR_MESSAGE_KEY = 'message'
     CORS_URL = '*'
     AD_USE_NTLM = True
 
