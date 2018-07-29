@@ -53,7 +53,7 @@ class AD(object):
             'The application has a configuration error. Ask the administrator to check the logs.')
         try:
             config = current_app.config[config_name]
-        except KeyError as error:
+        except KeyError:
             self.log('error', 'The configuration option "{0}" is not set'.format(config_name))
             if raise_exc:
                 raise config_error
@@ -93,7 +93,7 @@ class AD(object):
             msg = 'Connecting to Active Directory with the URL "{0}"'.format(ldap_url)
             self.log('debug', msg)
             self._connection.open()
-        except LDAPSocketOpenError as error:
+        except LDAPSocketOpenError:
             msg = 'The connection to Active Directory with the URL "{0}" failed'.format(ldap_url)
             self.log('error', msg, exc_info=True)
             raise ADError('The connection to Active Directory failed. Please try again.')
