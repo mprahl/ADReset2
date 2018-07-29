@@ -14,7 +14,6 @@ class Config(object):
     # We configure logging explicitly, turn off the Flask-supplied log handler
     LOGGER_HANDLER_POLICY = 'never'
     HOST = '0.0.0.0'
-    PRODUCTION = False
     TESTING = False
     SHOW_DB_URI = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -28,7 +27,6 @@ class ProdConfig(Config):
     """The production ADReset application configuration."""
 
     DEBUG = False
-    PRODUCTION = True
 
 
 class DevConfig(Config):

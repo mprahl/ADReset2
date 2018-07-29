@@ -1,4 +1,4 @@
-Flask
+Flask>=1.0.0
 Flask-Migrate
 Flask-SQLAlchemy
 flask-jwt-extended

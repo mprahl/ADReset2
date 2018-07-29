@@ -21,7 +21,7 @@ def load_config(app):
 
     :param flask.Flask app: a Flask application object
     """
-    if os.getenv('DEV') and os.getenv('DEV').lower() == 'true':
+    if app.config['ENV'] == 'development':
         default_config_obj = 'adreset.config.DevConfig'
     else:
         default_config_obj = 'adreset.config.ProdConfig'
@@ -67,7 +67,7 @@ def create_app(config_obj=None):
     else:
         load_config(app)
 
-    if app.config['PRODUCTION']:
+    if app.config['ENV'] != 'development':
         if app.config['SECRET_KEY'] == 'replace-me-with-something-random':
             raise Warning('You need to change the SECRET_KEY configuration for production')
         elif app.config['JWT_SECRET_KEY'] == 'replace-me-with-something-random':
