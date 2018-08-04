@@ -2,6 +2,6 @@ Flask>=1.0.0
 Flask-Migrate
 Flask-SQLAlchemy
 flask-jwt-extended>=3.12.0
-ldap3
+ldap3==2.5
 python-json-logger
 six
