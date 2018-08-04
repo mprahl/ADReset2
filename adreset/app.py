@@ -49,8 +49,8 @@ def insert_headers(response):
     cors_url = current_app.config.get('CORS_URL')
     if cors_url:
         response.headers['Access-Control-Allow-Origin'] = cors_url
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        response.headers['Access-Control-Allow-Method'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
     return response
 
 

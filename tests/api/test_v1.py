@@ -19,7 +19,7 @@ def test_insert_headers(client):
     rv = client.get('/api/v1/')
     assert 'Access-Control-Allow-Origin: *' in str(rv.headers)
     assert 'Access-Control-Allow-Headers: Content-Type' in str(rv.headers)
-    assert 'Access-Control-Allow-Method: GET, OPTIONS' in str(rv.headers)
+    assert 'Access-Control-Allow-Methods: GET, POST, OPTIONS' in str(rv.headers)
 
 
 def test_login(client, mock_ad):
