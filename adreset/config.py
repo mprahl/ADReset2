@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import os.path
+from datetime import timedelta
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
@@ -18,8 +19,12 @@ class Config(object):
     SHOW_DB_URI = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'replace-me-with-something-random'
-    JWT_SECRET_KEY = 'replace-me-with-something-random'
     JWT_ERROR_MESSAGE_KEY = 'message'
+    JWT_BLACKLIST_ENABLED = True
+    JWT_BLACKLIST_TOKEN_CHECKS = ['access']
+    JWT_IDENTITY_CLAIM = 'sub'
+    # Default the access tokens to expire after one hour
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     CORS_URL = '*'
     AD_USE_NTLM = True
 

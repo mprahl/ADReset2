@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import os
+from datetime import datetime
 
 from flask import Flask, current_app
 from flask_jwt_extended import JWTManager
@@ -12,7 +13,7 @@ from werkzeug.exceptions import default_exceptions
 from adreset.logger import init_logging
 from adreset.error import json_error, ValidationError, ConfigurationError, ADError
 from adreset.api.v1 import api_v1
-from adreset.models import db
+from adreset.models import db, BlacklistedToken
 
 
 def load_config(app):
@@ -53,6 +54,11 @@ def insert_headers(response):
     return response
 
 
+def create_db():
+    """Run db.create_all()."""
+    db.create_all()
+
+
 def create_app(config_obj=None):
     """
     Create a Flask application object.
@@ -61,7 +67,6 @@ def create_app(config_obj=None):
     :rtype: flask.Flask
     """
     app = Flask(__name__)
-    JWTManager(app)
     if config_obj:
         app.config.from_object(config_obj)
     else:
@@ -70,26 +75,36 @@ def create_app(config_obj=None):
     if app.config['ENV'] != 'development':
         if app.config['SECRET_KEY'] == 'replace-me-with-something-random':
             raise Warning('You need to change the SECRET_KEY configuration for production')
-        elif app.config['JWT_SECRET_KEY'] == 'replace-me-with-something-random':
-            raise Warning('You need to change the JWT_SECRET_KEY configuration for production')
 
     init_logging(app)
     db.init_app(app)
     migrations_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'migrations')
     Migrate(app, db, directory=migrations_dir)
-
-    @app.cli.command()
-    def create_db():
-        """Run db.create_all()."""
-        db.create_all()
+    app.cli.command()(create_db)
 
     for status_code in default_exceptions.keys():
         app.register_error_handler(status_code, json_error)
     app.register_error_handler(ValidationError, json_error)
     app.register_error_handler(ConfigurationError, json_error)
     app.register_error_handler(ADError, json_error)
-    app.register_blueprint(api_v1, url_prefix='/api/v1')
 
     app.after_request(insert_headers)
+    app.register_blueprint(api_v1, url_prefix='/api/v1')
+
+    jwt = JWTManager(app)
+    jwt.token_in_blacklist_loader(BlacklistedToken.is_token_revoked)
+    app.cli.command()(prune_blacklisted_tokens)
 
     return app
+
+
+def prune_blacklisted_tokens():
+    """Delete blacklisted tokens that have expired from the database."""
+    expired = BlacklistedToken.query.filter(BlacklistedToken.expires < datetime.now()).all()
+    if expired:
+        print('Removing {0} expired blacklisted tokens'.format(len(expired)))
+        for token in expired:
+            db.session.delete(token)
+        db.session.commit()
+    else:
+        print('No expired blacklisted tokens to remove')

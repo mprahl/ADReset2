@@ -4,12 +4,12 @@ from __future__ import unicode_literals
 
 from flask import Blueprint, jsonify, request
 from six import string_types
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
 
 from adreset import version
 from adreset.error import ValidationError
 from adreset.ad import AD
-from adreset.models import db, User
+from adreset.models import db, User, BlacklistedToken
 
 
 api_v1 = Blueprint('api_v1', __name__)
@@ -53,6 +53,19 @@ def login():
         ad.log('debug', 'The user was successfully created in the database')
     # The token's identity uses the user's GUID since that is unique across the AD Forest and won't
     # change if the account gets renamed
-    return jsonify({
-        'token': create_access_token(identity=user.ad_guid)
-    })
+    token = create_access_token(identity=user.ad_guid)
+    return jsonify({'token': token})
+
+
+@api_v1.route('/logout', methods=['POST'])
+@jwt_required
+def logout():
+    """
+    Logout the user by revoking their token.
+
+    :rtype: flask.Response
+    """
+    jwt = get_raw_jwt()
+    # Store the token in the database status of not currently revoked
+    BlacklistedToken.add_token(jwt)
+    return jsonify({'message': 'You were logged out successfully'})

@@ -7,9 +7,10 @@ from os import path
 import ldap3
 from mock import patch, PropertyMock
 import pytest
+from flask_jwt_extended import create_access_token
 
 from adreset.app import create_app
-from adreset.models import db
+from adreset.models import db, User
 import adreset.ad
 
 
@@ -36,6 +37,20 @@ def client(app):
     """Pytest fixture that creates a Flask test client object for the pytest session."""
     with app.test_client() as client:
         yield client
+
+
+@pytest.fixture(scope='function')
+def logged_in_headers(app):
+    """Pytest fixture that creates a valid token."""
+    guid = '10385a23-6def-4990-84a8-32444e36e496'
+    user = User(ad_guid=guid)
+    db.session.add(user)
+    db.session.commit()
+    token = create_access_token(identity=guid)
+    return {
+        'Authorization': 'Bearer {0}'.format(token),
+        'Content-Type': 'application/json'
+    }
 
 
 @pytest.fixture(scope='function')

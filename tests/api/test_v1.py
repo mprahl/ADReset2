@@ -35,3 +35,18 @@ def test_login(client, mock_ad):
     assert set(rv_json.keys()) == set(['token'])
     # Make sure the user was created after the first login
     assert User.query.filter_by(ad_guid='10385a23-6def-4990-84a8-32444e36e496').first()
+
+
+def test_logout(client, logged_in_headers):
+    """Test that logouts are successfull."""
+    rv = client.post('/api/v1/logout', headers=logged_in_headers)
+    assert rv.status_code == 200
+    rv_json = json.loads(rv.data.decode('utf-8'))
+    assert rv_json['message'] == 'You were logged out successfully'
+
+    # Make sure that if the user tries to log out with the same token they get an error
+    # saying their token is revoked
+    rv = client.post('/api/v1/logout', headers=logged_in_headers)
+    assert rv.status_code == 401
+    rv_json = json.loads(rv.data.decode('utf-8'))
+    assert rv_json['message'] == 'Token has been revoked'

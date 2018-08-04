@@ -11,3 +11,4 @@ db = SQLAlchemy()
 # SQLAlchemy aware of the models whenever `db` is imported.
 from adreset.models.questions import Answer, Question  # noqa: F401
 from adreset.models.users import User  # noqa: F401
+from adreset.models.tokens import BlacklistedToken  # noqa: F401
