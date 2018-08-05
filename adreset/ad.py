@@ -36,7 +36,11 @@ class AD(object):
         :kwarg any **kwarg: any keyword arguments to pass on to the logger
         """
         log_method = getattr(log, category)
-        logged_in_user = self.get_loggedin_user(raise_exc=False)
+        # Only get the logged-in user info if the connection is bound
+        if self._connection and self._connection.bound:
+            logged_in_user = self.get_loggedin_user(raise_exc=False)
+        else:
+            logged_in_user = None
         log_method({'message': message, 'user': logged_in_user}, **kwarg)
 
     def _get_config(self, config_name, raise_exc=True):
@@ -51,12 +55,13 @@ class AD(object):
         """
         config_error = ConfigurationError(
             'The application has a configuration error. Ask the administrator to check the logs.')
-        try:
+        if config_name in current_app.config:
             config = current_app.config[config_name]
-        except KeyError:
+        else:
             self.log('error', 'The configuration option "{0}" is not set'.format(config_name))
             if raise_exc:
                 raise config_error
+            return None
 
         if config_name == 'AD_LDAP_URI' and not config.startswith('ldaps://'):
             self.log('error', 'LDAPS is not set and is required. Please reconfigure "AD_LDAP_URI".')
