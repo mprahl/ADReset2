@@ -716,6 +716,163 @@
         },
         {
             "attributes": {
+                "accountExpires": "9999-12-31 23:59:59.999999",
+                "badPasswordTime": "1601-01-01 00:00:00+00:00",
+                "badPwdCount": 0,
+                "cn": "Locked User",
+                "codePage": 0,
+                "countryCode": 0,
+                "dSCorePropagationData": [
+                    "1601-01-01 00:00:00+00:00"
+                ],
+                "displayName": "Locked User",
+                "distinguishedName": "CN=lockeduser,OU=ADReset,DC=adreset,DC=local",
+                "givenName": "Locked",
+                "instanceType": 4,
+                "lastLogoff": "1601-01-01 00:00:00+00:00",
+                "lastLogon": "1601-01-01 00:00:00+00:00",
+                "logonCount": 0,
+                "memberOf": [
+                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                ],
+                "msDS-SupportedEncryptionTypes": 0,
+                "name": "Test User",
+                "objectCategory": "CN=Person,CN=Schema,CN=Configuration,DC=adreset,DC=local",
+                "objectClass": [
+                    "top",
+                    "person",
+                    "organizationalPerson",
+                    "user"
+                ],
+                "objectGUID": "5609c5ec-c0df-4480-a94b-b6eb0fc4c066",
+                "objectSid": "S-1-5-21-1270288957-3800934213-3019856503-1648",
+                "primaryGroupID": 513,
+                "pwdLastSet": "2016-10-31 23:03:11.741022+00:00",
+                "sAMAccountName": "lockeduser",
+                "sAMAccountType": 805306368,
+                "sn": "User",
+                "uSNChanged": 86130,
+                "uSNCreated": 86116,
+                "userAccountControl": 66048,
+                "userPrincipalName": "lockeduser@adreset.local",
+                "userPassword": "P@ssW0rd",
+                "whenChanged": "2016-10-31 23:03:49+00:00",
+                "whenCreated": "2016-10-31 23:03:11+00:00"
+            },
+            "dn": "CN=lockeduser,OU=ADReset,DC=adreset,DC=local",
+            "raw": {
+                "accountExpires": [
+                    "9223372036854775807"
+                ],
+                "badPasswordTime": [
+                    "0"
+                ],
+                "badPwdCount": [
+                    "0"
+                ],
+                "cn": [
+                    "Test User"
+                ],
+                "codePage": [
+                    "0"
+                ],
+                "countryCode": [
+                    "0"
+                ],
+                "dSCorePropagationData": [
+                    "16010101000000.0Z"
+                ],
+                "displayName": [
+                    "Test User"
+                ],
+                "distinguishedName": [
+                    "CN=lockeduser,OU=ADReset,DC=adreset,DC=local"
+                ],
+                "givenName": [
+                    "Test"
+                ],
+                "instanceType": [
+                    "4"
+                ],
+                "lastLogoff": [
+                    "0"
+                ],
+                "lastLogon": [
+                    "0"
+                ],
+                "logonCount": [
+                    "0"
+                ],
+                "memberOf": [
+                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                ],
+                "msDS-SupportedEncryptionTypes": [
+                    "0"
+                ],
+                "name": [
+                    "Locked User"
+                ],
+                "objectCategory": [
+                    "CN=Person,CN=Schema,CN=Configuration,DC=adreset,DC=local"
+                ],
+                "objectClass": [
+                    "top",
+                    "person",
+                    "organizationalPerson",
+                    "user"
+                ],
+                "objectGUID": [
+                    {
+                        "encoded": "7MUJVt/AgESpS7brD8TAZg==",
+                        "encoding": "base64"
+                    }
+                ],
+                "objectSid": [
+                    {
+                        "encoded": "AQUAAAAAAAUVAAAAPRK3S0WnjeJ3Wv+zSAYAAA==",
+                        "encoding": "base64"
+                    }
+                ],
+                "primaryGroupID": [
+                    "513"
+                ],
+                "pwdLastSet": [
+                    "131224285917410224"
+                ],
+                "sAMAccountName": [
+                    "lockeduser"
+                ],
+                "sAMAccountType": [
+                    "805306368"
+                ],
+                "sn": [
+                    "User"
+                ],
+                "uSNChanged": [
+                    "86130"
+                ],
+                "uSNCreated": [
+                    "86116"
+                ],
+                "userAccountControl": [
+                    "66048"
+                ],
+                "userPassword": [
+                    "P@ssW0rd"
+                ],
+                "userPrincipalName": [
+                    "lockeduser@adreset.local"
+                ],
+                "whenChanged": [
+                    "20161031230349.0Z"
+                ],
+                "whenCreated": [
+                    "20161031230311.0Z"
+                ]
+            }
+        },
+        {
+            "attributes": {
                 "cn": "Domain Users",
                 "dSCorePropagationData": [
                     "2016-04-03 18:42:34+00:00",

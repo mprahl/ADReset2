@@ -2,6 +2,8 @@
 
 from __future__ import unicode_literals
 
+import re
+
 import ldap3
 from ldap3.core.exceptions import LDAPSocketOpenError
 from flask import current_app
@@ -194,6 +196,40 @@ class AD(object):
         if raise_exc:
             raise ADError(self.failed_search_error)
 
+    def get_attribute(self, sam_account_name, attribute):
+        """
+        Get an LDAP attribute from the object.
+
+        :param str sam_account_name: the sAMAccountName of the LDAP object to search for
+        :param str attribute: the attribute of the LDAP object to search for
+        :rtype: any
+        :return: the attribute of the LDAP object
+        """
+        search_filter = '(sAMAccountName={0})'.format(sam_account_name)
+        results = self.search(search_filter, attributes=[attribute])
+        if 'attributes' in results[0]:
+            return results[0]['attributes'][attribute]
+        else:
+            self.log('error', 'The LDAP attribute "{0}" on the "{1}" wasn\'t found'.format(
+                attribute, sam_account_name))
+
+    def get_domain_attribute(self, attribute):
+        """
+        Get an LDAP attribute from the domain.
+
+        :param str attribute: the attribute from the domain to search for
+        :rtype: any
+        :return: the domain attribute
+        """
+        search_filter = '(&(objectClass=domainDNS))'
+        results = self.search(search_filter, [attribute])
+
+        if 'attributes' in results[0]:
+            return results[0]['attributes'][attribute]
+        else:
+            self.log('error', 'The LDAP attribute "{0}" on the domain wasn\'t found'.format(
+                attribute))
+
     def get_guid(self, sam_account_name):
         """
         Get an object's GUID (unique identifier across the AD Forest).
@@ -202,7 +238,108 @@ class AD(object):
         :return: the object's GUID in string format
         :rtype: str
         """
-        search_filter = '(sAMAccountName={0})'.format(sam_account_name)
-        results = self.search(search_filter, attributes=['objectGuid'])
-        # ldap3 returns the GUID surrounded by curly braces for whatever reason, so remove that
-        return results[0]['attributes']['objectGuid'].strip('{}')
+        guid = self.get_attribute(sam_account_name, 'objectGuid')
+        if guid:
+            # ldap3 returns the GUID surrounded by curly braces for whatever reason, so remove that
+            return guid.strip('{}')
+
+    def get_dn(self, sam_account_name):
+        """
+        Get an object's distinguished name.
+
+        :param str sam_account_name: the sAMAccountName of the LDAP object to search for
+        :return: the objet's distinguished name
+        :rtype: str
+        """
+        return self.get_attribute(sam_account_name, 'distinguishedName')
+
+    @property
+    def min_pwd_length(self):
+        """
+        Get the domain's minimum password length.
+
+        :rtype: int
+        :return: the minimum length a password must be
+        """
+        return int(self.get_domain_attribute('minPwdLength'))
+
+    @property
+    def pw_complexity_required(self):
+        """
+        Return if the domain requires complex passwords.
+
+        :rtype: bool
+        :return: a boolean specifying if the domain requires complex passwords
+        """
+        return bool(self.get_domain_attribute('pwdProperties'))
+
+    @property
+    def min_pwd_age(self):
+        """
+        Get the minimum age a password must be before being changed in days.
+
+        :rtype: int
+        :return: an integer specfying how many days a password must be set for before changing it
+        """
+        min_pwd_age = int(self.get_domain_attribute('minPwdAge'))
+        # Multiply by negative one to make the number positive, then divide by
+        # 864000000000 (1 day in file time)
+        return int((min_pwd_age * -1) / 864000000000)
+
+    def match_min_pwd_length(self, password):
+        """
+        Determine if a password meets the domain's length requirements.
+
+        :rtype: bool
+        :return: a boolean specifying if the password meets the length requirements
+        """
+        return len(password) >= self.min_pwd_length
+
+    def match_pwd_complexity(self, password):
+        """
+        Determine if the password matches the complexity required by the domain.
+
+        :param str password: the password to check
+        :rtype: bool
+        :return: if the password matches the complexity required by the domain
+        """
+        if self.pw_complexity_required:
+            complexity_score = 0
+            # If a capital letter is found in the password
+            if re.search(r'[A-Z]', password):
+                complexity_score += 1
+            # If a lowercase letter is found in the password
+            if re.search(r'[a-z]', password):
+                complexity_score += 1
+            # If a digit is found in the password
+            if re.search(r'\d', password):
+                complexity_score += 1
+            # If a nonletter or number is found in the password (should match any special character)
+            if re.search(r'\W', password):
+                complexity_score += 1
+
+            return complexity_score >= 3
+        else:
+            return True
+
+    def change_password(self, sam_account_name, new_password, old_password):
+        """
+        Change a user's password by supplying the old password.
+
+        :param str sam_account_name: the user's sAMAccountName
+        :param str old_password: the user's current password
+        :param str new_password: the user's new password
+        """
+        dn = self.get_dn(sam_account_name)
+        self.connection.extend.microsoft.modify_password(dn, new_password, old_password)
+
+    def reset_password(self, sam_account_name, new_password):
+        """
+        Reset and unlock a user's password.
+
+        :param str sam_account_name: the user's sAMAccountName to reset
+        :param str new_password: the user's new password
+        """
+        dn = self.get_dn(sam_account_name)
+        self.connection.extend.microsoft.modify_password(dn, new_password, old_password=None)
+        self.connection.extend.microsoft.unlock_account(dn)
