@@ -74,7 +74,10 @@ def create_app(config_obj=None):
 
     if app.config['ENV'] != 'development':
         if app.config['SECRET_KEY'] == 'replace-me-with-something-random':
-            raise Warning('You need to change the SECRET_KEY configuration for production')
+            raise RuntimeError('You need to change the SECRET_KEY configuration for production')
+    for config in ('AD_DOMAIN', 'AD_LDAP_URI', 'SQLALCHEMY_DATABASE_URI'):
+        if not app.config.get(config):
+            raise RuntimeError('You need to set the "{0}" setting'.format(config))
 
     init_logging(app)
     db.init_app(app)
