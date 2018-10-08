@@ -7,8 +7,9 @@ import re
 import ldap3
 from ldap3.core.exceptions import LDAPSocketOpenError
 from flask import current_app
+from werkzeug.exceptions import Unauthorized
 
-from adreset.error import ConfigurationError, ADError, ValidationError
+from adreset.error import ConfigurationError, ADError
 from adreset import log
 
 
@@ -137,9 +138,13 @@ class AD(object):
 
         if not self.connection.bind():
             self.log('info', 'The user "{0}" failed to login'.format(self.connection.user))
-            raise ValidationError('The username or password is incorrect. Please try again.')
+            raise Unauthorized('The username or password is incorrect. Please try again.')
         else:
             self.log('info', 'The user "{0}" logged in successfully'.format(self.connection.user))
+
+    def service_account_login(self):
+        """Login using the configured service account."""
+        self.login(self._get_config('AD_SERVICE_USERNAME'), self._get_config('AD_SERVICE_PASSWORD'))
 
     def get_loggedin_user(self, raise_exc=True):
         """
@@ -238,7 +243,7 @@ class AD(object):
         :return: the object's GUID in string format
         :rtype: str
         """
-        guid = self.get_attribute(sam_account_name, 'objectGuid')
+        guid = self.get_attribute(sam_account_name, 'objectGUID')
         if guid:
             # ldap3 returns the GUID surrounded by curly braces for whatever reason, so remove that
             return guid.strip('{}')
@@ -252,6 +257,25 @@ class AD(object):
         :rtype: str
         """
         return self.get_attribute(sam_account_name, 'distinguishedName')
+
+    def get_sam_account_name(self, guid):
+        """
+        Get a user's distinguished name from their GUID.
+
+        :param str guid: the GUID of the user to search for
+        :return: the user's sAMAccountNmae
+        :rtype: str
+        """
+        search_filter = '(&(objectClass=user)(objectGUID={0}))'.format(guid)
+        results = self.search(search_filter, ['sAMAccountName'])
+
+        if 'attributes' in results[0]:
+            return results[0]['attributes']['sAMAccountName']
+        else:
+            self.log(
+                'error',
+                'The user with the GUID {0} couldn\'t be found in Active Directory'.format(guid))
+            raise ADError('The user couldn\'t be found in Active Directory')
 
     @property
     def min_pwd_length(self):
@@ -343,3 +367,58 @@ class AD(object):
         dn = self.get_dn(sam_account_name)
         self.connection.extend.microsoft.modify_password(dn, new_password, old_password=None)
         self.connection.extend.microsoft.unlock_account(dn)
+
+    def check_group_membership(self, sam_account_name, group):
+        """
+        Check if the passed-in user is a member of this group (nested search).
+
+        :param str sam_account_name: the user's sAMAccountName to check group membership
+        :param str group: the group's sAMAccountName to check if the user is a member of
+        :return: a boolean determining if the user is a member of this group
+        :rtype: bool
+        """
+        group_dn = self.get_dn(group)
+        # Start by seeing if the user is part of a nested group membership
+        search_filter = ('(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:={0}))'
+                         .format(group_dn))
+        results = self.search(search_filter, attributes=['sAMAccountName'])
+        members = set(
+            [user['attributes']['sAMAccountName'] for user in results if user.get('attributes')])
+        if sam_account_name in members:
+            return True
+
+        # If the user isn't part of a nested group membership, check to see if the user's primary
+        # group is the group in question
+        primary_group_id = self.get_attribute(sam_account_name, 'primaryGroupID')
+        domain_sid = self.get_domain_attribute('objectSid')
+        search_filter = '(&(objectClass=group)(objectSid={0}-{1}))'.format(
+            domain_sid, primary_group_id)
+        results = self.search(search_filter, attributes=['distinguishedName'])
+        if 'attributes' in results[0] and results[0]['attributes']['distinguishedName'] == group_dn:
+            return True
+
+        return False
+
+    def check_user_group_membership(self, user_guid):
+        """
+        Check if the passed-in user is a regular user.
+
+        :param str user_guid: the user's GUID to check group membership
+        :return: a boolean determining if the user is a regular user
+        :rtype: bool
+        """
+        user_group = self._get_config('AD_USERS_GROUP')
+        sam_account_name = self.get_sam_account_name(user_guid)
+        return self.check_group_membership(sam_account_name, user_group)
+
+    def check_admin_group_membership(self, user_guid):
+        """
+        Check if the passed-in user is an admin.
+
+        :param str user_guid: the user's GUID to check group membership
+        :return: a boolean determining if the user is an admin
+        :rtype: bool
+        """
+        admin_group = self._get_config('AD_ADMINS_GROUP')
+        sam_account_name = self.get_sam_account_name(user_guid)
+        return self.check_group_membership(sam_account_name, admin_group)

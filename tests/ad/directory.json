@@ -284,7 +284,6 @@
                 "lastLogon": "1601-01-01 00:00:00+00:00",
                 "logonCount": 0,
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local",
                     "CN=ADReset Admins,OU=Groups,DC=adreset,DC=local"
                 ],
                 "msDS-SupportedEncryptionTypes": 0,
@@ -356,7 +355,6 @@
                     "0"
                 ],
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local",
                     "CN=ADReset Admins,OU=Groups,DC=adreset,DC=local"
                 ],
                 "msDS-SupportedEncryptionTypes": [
@@ -442,7 +440,7 @@
                 "lastLogon": "1601-01-01 00:00:00+00:00",
                 "logonCount": 0,
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                    "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
                 ],
                 "name": "testuser2",
                 "objectCategory": "CN=Person,CN=Schema,CN=Configuration,DC=adreset,DC=local",
@@ -508,7 +506,7 @@
                     "0"
                 ],
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                    "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
                 ],
                 "name": [
                     "testuser2"
@@ -587,7 +585,7 @@
                 "lastLogon": "1601-01-01 00:00:00+00:00",
                 "logonCount": 0,
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                    "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
                 ],
                 "name": "Test User3",
                 "objectCategory": "CN=Person,CN=Schema,CN=Configuration,DC=adreset,DC=local",
@@ -653,7 +651,7 @@
                     "0"
                 ],
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                    "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
                 ],
                 "name": [
                     "Test User3"
@@ -733,7 +731,7 @@
                 "lastLogon": "1601-01-01 00:00:00+00:00",
                 "logonCount": 0,
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                    "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
                 ],
                 "msDS-SupportedEncryptionTypes": 0,
                 "name": "Test User",
@@ -804,7 +802,7 @@
                     "0"
                 ],
                 "memberOf": [
-                    "CN=Some Group,OU=Groups,DC=adreset,DC=local"
+                    "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
                 ],
                 "msDS-SupportedEncryptionTypes": [
                     "0"
@@ -1047,6 +1045,98 @@
                 ],
                 "sAMAccountName": [
                     "ADReset Admins"
+                ],
+                "sAMAccountType": [
+                    "268435456"
+                ],
+                "uSNChanged": [
+                    "86153"
+                ],
+                "uSNCreated": [
+                    "77882"
+                ],
+                "whenChanged": [
+                    "20161031230600.0Z"
+                ],
+                "whenCreated": [
+                    "20161027003000.0Z"
+                ]
+            }
+        },
+        {
+            "attributes": {
+                "cn": "ADReset Users",
+                "dSCorePropagationData": [
+                    "1601-01-01 00:00:00+00:00"
+                ],
+                "distinguishedName": "CN=ADReset Users,OU=Groups,DC=adreset,DC=local",
+                "groupType": -2147483646,
+                "instanceType": 4,
+                "member": [
+                    "CN=testuser2,OU=ADReset,DC=adreset,DC=local",
+                    "CN=testuser3,OU=ADReset,DC=adreset,DC=local",
+                    "CN=lockeduser,OU=ADReset,DC=adreset,DC=local"
+                ],
+                "name": "ADReset Users",
+                "objectCategory": "CN=Group,CN=Schema,CN=Configuration,DC=adreset,DC=local",
+                "objectClass": [
+                    "top",
+                    "group"
+                ],
+                "objectGUID": "5c1a6f4b-c9f8-4e85-836c-431d5e35572a",
+                "objectSid": "S-1-5-21-1270288957-3800934213-3019856503-1607",
+                "sAMAccountName": "ADReset Users",
+                "sAMAccountType": 268435456,
+                "uSNChanged": 86153,
+                "uSNCreated": 77882,
+                "whenChanged": "2016-10-31 23:06:00+00:00",
+                "whenCreated": "2016-10-27 00:30:00+00:00"
+            },
+            "dn": "CN=ADReset Users,OU=Groups,DC=adreset,DC=local",
+            "raw": {
+                "cn": [
+                    "ADReset Users"
+                ],
+                "dSCorePropagationData": [
+                    "16010101000000.0Z"
+                ],
+                "distinguishedName": [
+                    "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
+                ],
+                "groupType": [
+                    "-2147483646"
+                ],
+                "instanceType": [
+                    "4"
+                ],
+                "member": [
+                    "CN=testuser,OU=ADReset,DC=adreset,DC=local",
+                    "CN=matth,CN=Users,DC=adreset,DC=local"
+                ],
+                "name": [
+                    "ADReset Users"
+                ],
+                "objectCategory": [
+                    "CN=Group,CN=Schema,CN=Configuration,DC=adreset,DC=local"
+                ],
+                "objectClass": [
+                    "top",
+                    "group"
+                ],
+                "objectGUID": [
+                    {
+                        "encoded": "S28aXPjJhU6DbEMdXjVXKg==",
+                        "encoding": "base64"
+                    }
+                ],
+                "objectSid": [
+                    {
+                        "encoded": "AQUAAAAAAAUVAAAAPRK3S0WnjeJ3Wv+zRwYAAA==",
+                        "encoding": "base64"
+                    }
+                ],
+                "sAMAccountName": [
+                    "ADReset Users"
                 ],
                 "sAMAccountType": [
                     "268435456"

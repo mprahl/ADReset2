@@ -8,12 +8,13 @@ from datetime import datetime
 from flask import Flask, current_app
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
-from werkzeug.exceptions import default_exceptions
+from werkzeug.exceptions import default_exceptions, Unauthorized
 
 from adreset.logger import init_logging
 from adreset.error import json_error, ValidationError, ConfigurationError, ADError
 from adreset.api.v1 import api_v1
 from adreset.models import db, BlacklistedToken
+import adreset.ad
 
 
 def load_config(app):
@@ -59,6 +60,22 @@ def create_db():
     db.create_all()
 
 
+def add_jwt_claims(identity):
+    """
+    Verify the user is authorized and add the role (admin or user) to the JWT.
+
+    :param str identity: the user's GUID stored in the JWT
+    """
+    ad = adreset.ad.AD()
+    ad.service_account_login()
+    if ad.check_admin_group_membership(identity):
+        return {'roles': ['admin']}
+    elif ad.check_user_group_membership(identity):
+        return {'roles': ['user']}
+    else:
+        raise Unauthorized('You don\'t have access to use this application')
+
+
 def create_app(config_obj=None):
     """
     Create a Flask application object.
@@ -75,7 +92,8 @@ def create_app(config_obj=None):
     if app.config['ENV'] != 'development':
         if app.config['SECRET_KEY'] == 'replace-me-with-something-random':
             raise RuntimeError('You need to change the SECRET_KEY configuration for production')
-    for config in ('AD_DOMAIN', 'AD_LDAP_URI', 'SQLALCHEMY_DATABASE_URI'):
+    for config in ('AD_DOMAIN', 'AD_LDAP_URI', 'AD_USERS_GROUP', 'AD_ADMINS_GROUP',
+                   'AD_SERVICE_USERNAME', 'AD_SERVICE_PASSWORD', 'SQLALCHEMY_DATABASE_URI'):
         if not app.config.get(config):
             raise RuntimeError('You need to set the "{0}" setting'.format(config))
 
@@ -96,6 +114,7 @@ def create_app(config_obj=None):
 
     jwt = JWTManager(app)
     jwt.token_in_blacklist_loader(BlacklistedToken.is_token_revoked)
+    jwt.user_claims_loader(add_jwt_claims)
     app.cli.command()(prune_blacklisted_tokens)
 
     return app

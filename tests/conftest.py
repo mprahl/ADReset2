@@ -40,20 +40,6 @@ def client(app):
 
 
 @pytest.fixture(scope='function')
-def logged_in_headers(app):
-    """Pytest fixture that creates a valid token."""
-    guid = '10385a23-6def-4990-84a8-32444e36e496'
-    user = User(ad_guid=guid)
-    db.session.add(user)
-    db.session.commit()
-    token = create_access_token(identity=guid)
-    return {
-        'Authorization': 'Bearer {0}'.format(token),
-        'Content-Type': 'application/json'
-    }
-
-
-@pytest.fixture(scope='function')
 # Request the app fixture to establish a context so the AD class can get config options from Flask
 def mock_ad(app):
     """Pytest fixture that mocks an LDAP directory."""
@@ -70,3 +56,53 @@ def mock_ad(app):
         yield adreset.ad.AD()
 
     mock_connection.unbind()
+
+
+# ldap3 testing doesn't support the AD specific searches such as nested group memberships,
+# so we must mock those ahead of time.
+@pytest.fixture(scope='function')
+def mock_admin_ad(mock_ad):
+    """Pytest fixture that mocks an LDAP directory for user logins."""
+    with patch.object(mock_ad, 'check_user_group_membership', return_value=False):
+        with patch.object(mock_ad, 'check_admin_group_membership', return_value=True):
+            with patch('adreset.ad.AD', return_value=mock_ad):
+                yield mock_ad
+
+
+@pytest.fixture(scope='function')
+def mock_user_ad(mock_ad):
+    """Pytest fixture that mocks an LDAP directory for user logins."""
+    with patch.object(mock_ad, 'check_user_group_membership', return_value=True):
+        with patch.object(mock_ad, 'check_admin_group_membership', return_value=False):
+            with patch('adreset.ad.AD', return_value=mock_ad):
+                yield mock_ad
+
+
+@pytest.fixture(scope='function')
+def admin_logged_in_headers(mock_admin_ad):
+    """Pytest fixture that creates a valid token for an admin."""
+    # This is the GUID for "testuser" which is a member of "ADReset Admins"
+    guid = '5609c5ec-c0df-4480-a94b-b6eb0fc4c066'
+    user = User(ad_guid=guid)
+    db.session.add(user)
+    db.session.commit()
+    token = create_access_token(identity=guid)
+    return {
+        'Authorization': 'Bearer {0}'.format(token),
+        'Content-Type': 'application/json'
+    }
+
+
+@pytest.fixture(scope='function')
+def logged_in_headers(mock_user_ad):
+    """Pytest fixture that creates a valid token for a user."""
+    # This is the GUID for "testuser2" which is a member of "ADReset Users"
+    guid = '10385a23-6def-4990-84a8-32444e36e496'
+    user = User(ad_guid=guid)
+    db.session.add(user)
+    db.session.commit()
+    token = create_access_token(identity=guid)
+    return {
+        'Authorization': 'Bearer {0}'.format(token),
+        'Content-Type': 'application/json'
+    }

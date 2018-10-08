@@ -2,17 +2,47 @@
 
 from __future__ import unicode_literals
 
+from functools import wraps
+
 from flask import Blueprint, jsonify, request
+from werkzeug.exceptions import Forbidden
 from six import string_types
-from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
+from flask_jwt_extended import (
+    create_access_token, jwt_required, get_raw_jwt, verify_jwt_in_request, get_jwt_claims)
 
 from adreset import version
 from adreset.error import ValidationError
-from adreset.ad import AD
+import adreset.ad
 from adreset.models import db, User, BlacklistedToken
 
 
 api_v1 = Blueprint('api_v1', __name__)
+
+
+def admin_required(func):
+    """Verify the token and ensure the user is an admin."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        claims = get_jwt_claims()
+        if 'admin' not in claims['roles']:
+            raise Forbidden('You must be an administrator to proceed with this action')
+        else:
+            return func(*args, **kwargs)
+    return wrapper
+
+
+def user_required(func):
+    """Verify the token and ensure the user is not an admin."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        claims = get_jwt_claims()
+        if 'user' not in claims['roles']:
+            raise Forbidden('Administrators are not authorized to proceed with this action')
+        else:
+            return func(*args, **kwargs)
+    return wrapper
 
 
 @api_v1.route('/about')
@@ -39,7 +69,7 @@ def login():
         if not isinstance(req_json[required], string_types):
             raise ValidationError('The "{0}" parameter must be a string'.format(required))
 
-    ad = AD()
+    ad = adreset.ad.AD()
     ad.login(req_json['username'], req_json['password'])
     guid = ad.get_guid(ad.get_loggedin_user())
     user = User.query.filter_by(ad_guid=guid).first()
@@ -69,3 +99,15 @@ def logout():
     # Store the token in the database status of not currently revoked
     BlacklistedToken.add_token(jwt)
     return jsonify({'message': 'You were logged out successfully'})
+
+
+@api_v1.route('/protected')
+@user_required
+def protected():
+    return jsonify({'message': 'placeholder'})
+
+
+@api_v1.route('/admin-protected')
+@admin_required
+def admin_protected():
+    return jsonify({'message': 'placeholder'})

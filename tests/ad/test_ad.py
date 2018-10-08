@@ -5,6 +5,9 @@ from __future__ import unicode_literals
 import mock
 from mock import PropertyMock
 import pytest
+import ldap3
+
+import adreset.ad
 
 
 # Note that we can't login to LDAP using AD syntax, we must use the whole distinguished name
@@ -122,3 +125,73 @@ def test_reset_password(mock_ad):
     assert mock_ad.reset_password('lockedUser', 'NewP@ssw0rd') is None
     # We can verify that the lockoutTime was reset
     assert str(mock_ad.get_attribute('lockedUser', 'lockoutTime')) == '1601-01-01 00:00:00+00:00'
+
+
+class MockLDAPConnection(object):
+    """Mock ldap3.Connection."""
+
+    def __init__(self, search_side_effect):
+        """Initialize the mock ldap3 Connection."""
+        self.search_side_effect = search_side_effect
+        self.bound = True
+        self.authentication = ldap3.NTLM
+        self.username = None
+        self.password = None
+        self.response = None
+
+    def open(self):
+        """Open the connection."""
+        pass
+
+    def unbind(self):
+        """Unbind the connection."""
+        self.bound = False
+
+    def search(self, *args, **kwargs):
+        """Search LDAP and set self.response."""
+        self.response = self.search_side_effect.pop(0)
+        return True
+
+
+def test_check_group_membership_nested():
+    """Test the AD.check_group_membership method."""
+    search_side_effect = [
+        [{'attributes': {'distinguishedName': 'CN=ADReset Users,OU=Groups,DC=adreset,DC=local'}}],
+        [
+            {'attributes': {'sAMAccountName': 'testuser'}},
+            {'attributes': {'sAMAccountName': 'tbrady'}}
+        ]
+    ]
+    mock_conn_rv = MockLDAPConnection(search_side_effect)
+    with mock.patch('ldap3.Server'):
+        with mock.patch('ldap3.Connection', return_value=mock_conn_rv):
+            # AD.log will make calls to AD to get the display name, so just mock that
+            with mock.patch('adreset.ad.AD.log'):
+                ad = adreset.ad.AD()
+                assert ad.check_group_membership('testuser', 'ADReset Users') is True
+
+
+@pytest.mark.parametrize('primary_group,expected', [
+    ('ADReset Users', True),
+    ('Some Group', False)
+])
+def test_check_group_membership_primary_group(primary_group, expected):
+    """Test the AD.check_group_membership method when the group is the primary group."""
+    group_dn_base = 'CN={0},OU=Groups,DC=adreset,DC=local'
+    search_side_effect = [
+        [{'attributes': {'distinguishedName': group_dn_base.format('ADReset Users')}}],
+        [
+            {'attributes': {'sAMAccountName': 'thanks'}},
+            {'attributes': {'sAMAccountName': 'tbrady'}}
+        ],
+        [{'attributes': {'primaryGroupID': 1607}}],
+        [{'attributes': {'objectSid': 'S-1-5-21-1270288957-3800934213-3019856503'}}],
+        [{'attributes': {'distinguishedName': group_dn_base.format(primary_group)}}]
+    ]
+    mock_conn_rv = MockLDAPConnection(search_side_effect)
+    with mock.patch('ldap3.Server'):
+        with mock.patch('ldap3.Connection', return_value=mock_conn_rv):
+            # AD.log will make calls to AD to get the display name, so just mock that
+            with mock.patch('adreset.ad.AD.log'):
+                ad = adreset.ad.AD()
+                assert ad.check_group_membership('testuser', 'ADReset Users') is expected
