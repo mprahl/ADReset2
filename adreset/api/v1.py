@@ -77,6 +77,7 @@ def logout():
 @api_v1.route('/protected')
 @user_required
 def protected():
+    """Add a placeholder for tests."""
     return jsonify({'message': 'placeholder'})
 
 
