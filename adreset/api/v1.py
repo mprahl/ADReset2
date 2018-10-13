@@ -2,47 +2,18 @@
 
 from __future__ import unicode_literals
 
-from functools import wraps
-
 from flask import Blueprint, jsonify, request
-from werkzeug.exceptions import Forbidden
 from six import string_types
-from flask_jwt_extended import (
-    create_access_token, jwt_required, get_raw_jwt, verify_jwt_in_request, get_jwt_claims)
+from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
 
 from adreset import version
 from adreset.error import ValidationError
 import adreset.ad
 from adreset.models import db, User, BlacklistedToken
+from adreset.api.decorators import admin_required, user_required
 
 
 api_v1 = Blueprint('api_v1', __name__)
-
-
-def admin_required(func):
-    """Verify the token and ensure the user is an admin."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        verify_jwt_in_request()
-        claims = get_jwt_claims()
-        if 'admin' not in claims['roles']:
-            raise Forbidden('You must be an administrator to proceed with this action')
-        else:
-            return func(*args, **kwargs)
-    return wrapper
-
-
-def user_required(func):
-    """Verify the token and ensure the user is not an admin."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        verify_jwt_in_request()
-        claims = get_jwt_claims()
-        if 'user' not in claims['roles']:
-            raise Forbidden('Administrators are not authorized to proceed with this action')
-        else:
-            return func(*args, **kwargs)
-    return wrapper
 
 
 @api_v1.route('/about')
