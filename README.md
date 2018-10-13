@@ -28,7 +28,7 @@ To install tox, run the following in your virtualenv:
 $ pip install tox
 ```
 
-To run the tess, run:
+To run the tests, run:
 
 ```bash
 $ tox
