@@ -7,7 +7,7 @@ import json
 import flask_jwt_extended
 
 from adreset import version
-from adreset.models import User
+from adreset.models import User, Question, db
 
 
 def test_about(client):
@@ -41,6 +41,21 @@ def test_login(client, mock_user_ad):
     decoded_token = flask_jwt_extended.decode_token(rv_json['token'])
     assert decoded_token['sub'] == guid
     assert decoded_token['user_claims']['roles'] == ['user']
+
+
+def test_login_failed_not_enough_questions(client, mock_user_ad):
+    """Test that the login fails when there aren't enough questions configured."""
+    # There should be three questions by default, so just delete one so that an error is generated
+    first_question = Question.query.get(1)
+    db.session.delete(first_question)
+    db.session.commit()
+    # Because we are mocking AD with ldap3, we have to use the distinguished name to log in
+    rv = client.post('/api/v1/login', data=json.dumps({
+        'username': 'CN=testuser2,OU=ADReset,DC=adreset,DC=local',
+        'password': 'P@ssW0rd'}))
+    assert rv.status_code == 400
+    rv_json = json.loads(rv.data.decode('utf-8'))
+    assert rv_json['message'] == 'The administrator has not finished configuring the application'
 
 
 def test_admin_login(client, mock_admin_ad):
@@ -89,13 +104,64 @@ def test_user_protected(client, logged_in_headers, admin_logged_in_headers):
     }
 
 
-def test_admin_protected(client, logged_in_headers, admin_logged_in_headers):
-    """Test the /api/v1/protected route."""
-    rv = client.get('/api/v1/admin-protected', headers=logged_in_headers)
+def test_add_question(client, logged_in_headers, admin_logged_in_headers):
+    """Test the /api/v1/questions POST route."""
+    data = json.dumps({
+        'question': 'What is your favorite movie?'
+    })
+    rv = client.post('/api/v1/questions', headers=admin_logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'id': 4,
+        'question': 'What is your favorite movie?',
+        'url': 'http://localhost/api/v1/questions/4'
+    }
+
+    rv = client.post('/api/v1/questions', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'You must be an administrator to proceed with this action',
         'status': 403
     }
 
-    rv = client.get('/api/v1/admin-protected', headers=admin_logged_in_headers)
-    assert json.loads(rv.data.decode('utf-8')) == {'message': 'placeholder'}
+
+def test_get_questions(client, logged_in_headers):
+    """Test the /api/v1/questions route."""
+    rv = client.get('/api/v1/questions', headers=logged_in_headers)
+    items = [
+        {
+            'id': 1,
+            'question': 'What is your favorite flavor of ice cream?',
+            'url': 'http://localhost/api/v1/questions/1'
+        },
+        {
+            'id': 2,
+            'question': 'What is your favorite color?',
+            'url': 'http://localhost/api/v1/questions/2'
+        },
+        {
+            'id': 3,
+            'question': 'What is your favorite toy?',
+            'url': 'http://localhost/api/v1/questions/3'
+        }
+    ]
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data['items'] == items
+    # Order of the query arguments can vary
+    assert data['meta']['first'] in ('http://localhost/api/v1/questions?page=1&per_page=10',
+                                     'http://localhost/api/v1/questions?per_page=10&page=1')
+    assert data['meta']['last'] in ('http://localhost/api/v1/questions?page=1&per_page=10',
+                                    'http://localhost/api/v1/questions?per_page=10&page=1')
+    assert data['meta']['next'] is None
+    assert data['meta']['page'] == 1
+    assert data['meta']['pages'] == 1
+    assert data['meta']['per_page'] == 10
+    assert data['meta']['previous'] is None
+    assert data['meta']['total'] == 3
+
+
+def test_get_question(client, logged_in_headers):
+    """Test the /api/v1/questions/<id> route."""
+    rv = client.get('/api/v1/questions/2', headers=logged_in_headers)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'id': 2,
+        'question': 'What is your favorite color?'
+    }

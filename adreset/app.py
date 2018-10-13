@@ -9,11 +9,13 @@ from flask import Flask, current_app
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from werkzeug.exceptions import default_exceptions, Unauthorized
+from sqlalchemy import func
 
 from adreset.logger import init_logging
 from adreset.error import json_error, ValidationError, ConfigurationError, ADError
 from adreset.api.v1 import api_v1
-from adreset.models import db, BlacklistedToken
+from adreset.models import db, BlacklistedToken, Question
+from adreset import log
 import adreset.ad
 
 
@@ -71,7 +73,14 @@ def add_jwt_claims(identity):
     if ad.check_admin_group_membership(identity):
         return {'roles': ['admin']}
     elif ad.check_user_group_membership(identity):
-        return {'roles': ['user']}
+        # Make sure there are enough questions configured for the application to be usable
+        total_questions = db.session.query(func.count(Question.question)).scalar()
+        if total_questions < current_app.config['MINIMUM_QUESTIONS']:
+            log.error('There are {0} questions configured. There must be at least {1}.'
+                      .format(total_questions, current_app.config['MINIMUM_QUESTIONS']))
+            raise ValidationError('The administrator has not finished configuring the application')
+        else:
+            return {'roles': ['user']}
     else:
         raise Unauthorized('You don\'t have access to use this application')
 

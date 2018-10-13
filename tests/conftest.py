@@ -10,7 +10,7 @@ import pytest
 from flask_jwt_extended import create_access_token
 
 from adreset.app import create_app
-from adreset.models import db, User
+from adreset.models import db, User, Question
 import adreset.ad
 
 
@@ -30,6 +30,13 @@ def setup_db(app):
     db.session.remove()
     db.drop_all()
     db.create_all()
+    question = Question(question='What is your favorite flavor of ice cream?')
+    question2 = Question(question='What is your favorite color?')
+    question3 = Question(question='What is your favorite toy?')
+    db.session.add(question)
+    db.session.add(question2)
+    db.session.add(question3)
+    db.session.commit()
 
 
 @pytest.fixture(scope='session')

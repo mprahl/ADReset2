@@ -3,14 +3,16 @@
 from __future__ import unicode_literals
 
 from flask import Blueprint, jsonify, request
+from werkzeug.exceptions import NotFound
 from six import string_types
 from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
+from sqlalchemy import func
 
 from adreset import version
 from adreset.error import ValidationError
 import adreset.ad
-from adreset.models import db, User, BlacklistedToken
-from adreset.api.decorators import admin_required, user_required
+from adreset.models import db, User, BlacklistedToken, Question
+from adreset.api.decorators import paginate, admin_required, user_required
 
 
 api_v1 = Blueprint('api_v1', __name__)
@@ -78,7 +80,53 @@ def protected():
     return jsonify({'message': 'placeholder'})
 
 
-@api_v1.route('/admin-protected')
+@api_v1.route('/questions')
+@jwt_required
+@paginate
+def get_questions():
+    """
+    List all the questions.
+
+    :rtype: flask.Response
+    """
+    return Question.query
+
+
+@api_v1.route('/questions/<int:question_id>')
+@jwt_required
+def get_question(question_id):
+    """
+    List a specific question.
+
+    :rtype: flask.Response
+    """
+    question = Question.query.get(question_id)
+    if question:
+        return jsonify(question.to_json(include_url=False))
+    else:
+        raise NotFound('The question was not found')
+
+
+@api_v1.route('/questions', methods=['POST'])
 @admin_required
-def admin_protected():
-    return jsonify({'message': 'placeholder'})
+def add_question():
+    """
+    Add a question that users can use for their secret answers.
+
+    :rtype: flask.Response
+    """
+    req_json = request.get_json(force=True)
+    if not req_json.get('question'):
+        raise ValidationError('The "question" parameter was not provided or was empty')
+    elif not isinstance(req_json['question'], string_types):
+        raise ValidationError('The "question" parameter must be a string')
+
+    exists = bool((db.session.query(func.count(Question.question))).filter_by(
+        question=req_json['question']).scalar())
+    if exists:
+        raise ValidationError('The supplied question already exists')
+
+    question = Question(question=req_json['question'])
+    db.session.add(question)
+    db.session.commit()
+    return jsonify(question.to_json()), 201
