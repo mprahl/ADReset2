@@ -27,7 +27,10 @@ class Config(object):
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     CORS_URL = '*'
     AD_USE_NTLM = True
-    MINIMUM_QUESTIONS = 3
+    REQUIRED_ANSWERS = 3
+    CASE_SENSITIVE_ANSWERS = False
+    ALLOW_DUPLICATE_ANSWERS = False
+    ANSWERS_MINIMUM_LENGTH = 2
 
 
 class ProdConfig(Config):

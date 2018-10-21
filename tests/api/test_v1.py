@@ -7,7 +7,7 @@ import json
 import flask_jwt_extended
 
 from adreset import version
-from adreset.models import User, Question, db
+from adreset.models import User, Question, Answer, db
 
 
 def test_about(client):
@@ -164,4 +164,245 @@ def test_get_question(client, logged_in_headers):
     assert json.loads(rv.data.decode('utf-8')) == {
         'id': 2,
         'question': 'What is your favorite color?'
+    }
+
+
+def test_add_answer(client, logged_in_headers, admin_logged_in_headers):
+    """Test the answers POST route."""
+    data = json.dumps({
+        'question_id': 2,
+        'answer': 'bright pink'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'id': 1,
+        'question_id': 2,
+        'url': 'http://localhost/api/v1/answers/1',
+        'user_id': 1
+    }
+
+    rv = client.post('/api/v1/answers', headers=admin_logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'Administrators are not authorized to proceed with this action',
+        'status': 403
+    }
+
+
+def test_add_answer_already_used_question(client, logged_in_headers):
+    """Test that the answers POST route errors when a question is reused."""
+    answer = Answer(answer=Answer.hash_answer('bright pink'), user_id=1, question_id=2)
+    db.session.add(answer)
+    db.session.commit()
+    data = json.dumps({
+        'question_id': 2,
+        'answer': 'cherry red'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'That question has already been used by you',
+        'status': 400
+    }
+
+
+def test_add_answer_already_used_answer(app, client, logged_in_headers):
+    """Test that the answers POST route errors when an answer is reused."""
+    app.config['ALLOW_DUPLICATE_ANSWERS'] = False
+    answer = Answer(answer=Answer.hash_answer('bright pink'), user_id=1, question_id=2)
+    db.session.add(answer)
+    db.session.commit()
+    data = json.dumps({
+        'question_id': 3,
+        'answer': 'bright pink'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'The supplied answer has already been used for another question',
+        'status': 400
+    }
+
+
+def test_add_answer_already_used_answer_conf_true(app, client, logged_in_headers):
+    """Test that the answers POST route allows an answer to be reused with config true."""
+    app.config['ALLOW_DUPLICATE_ANSWERS'] = True
+    answer = Answer(answer=Answer.hash_answer('bright pink'), user_id=1, question_id=2)
+    db.session.add(answer)
+    db.session.commit()
+    data = json.dumps({
+        'question_id': 3,
+        'answer': 'bright pink'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'id': 2,
+        'question_id': 3,
+        'url': 'http://localhost/api/v1/answers/2',
+        'user_id': 1
+    }
+
+
+def test_add_answer_past_limit(client, logged_in_headers):
+    """Test that the answers POST route doesn't allow a fourth answer for a user."""
+    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=1, question_id=1)
+    answer2 = Answer(answer=Answer.hash_answer('green'), user_id=1, question_id=2)
+    answer3 = Answer(answer=Answer.hash_answer('Buzz Lightyear'), user_id=1, question_id=3)
+    db.session.add(answer)
+    db.session.add(answer2)
+    db.session.add(answer3)
+    # Add a fourth question so that a question doesn't have to be reused for the POST request
+    question = Question(question='Where were you born?')
+    db.session.add(question)
+    data = json.dumps({
+        'question_id': 4,
+        'answer': 'Boston, MA'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'You\'ve already set the required amount of secret answers',
+        'status': 400
+    }
+
+
+def test_add_answer_case_insensitive(app, client, logged_in_headers):
+    """Test the answers POST route when case sensitive answers are disabled."""
+    app.config['CASE_SENSITIVE_ANSWERS'] = False
+    data = json.dumps({
+        'question_id': 2,
+        'answer': 'Bright Green'
+    })
+    client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert Answer.verify_answer('bright green', Answer.query.get(1).answer) is True
+    assert Answer.verify_answer('Bright Green', Answer.query.get(1).answer) is False
+
+
+def test_add_answer_case_sensitive(app, client, logged_in_headers):
+    """Test the answers POST route when case sensitive answers are enabled."""
+    app.config['CASE_SENSITIVE_ANSWERS'] = True
+    data = json.dumps({
+        'question_id': 2,
+        'answer': 'Bright Green'
+    })
+    client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert Answer.verify_answer('bright green', Answer.query.get(1).answer) is False
+    assert Answer.verify_answer('Bright Green', Answer.query.get(1).answer) is True
+
+
+def test_add_answer_not_min_length(client, logged_in_headers):
+    """Test that the answers POST route doesn't allow an answer that is too short."""
+    data = json.dumps({
+        'question_id': 2,
+        'answer': 'd'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'The answer must be at least 2 characters long',
+        'status': 400
+    }
+
+
+def test_add_answer_no_question_id(client, logged_in_headers):
+    """Test that the answers POST route doesn't allow an answer without a question_id."""
+    data = json.dumps({
+        'answer': 'not sure'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'The "question_id" parameter was not provided or was empty',
+        'status': 400
+    }
+
+
+def test_add_answer_invalid_question_id(client, logged_in_headers):
+    """Test that the answers POST route doesn't allow an answer with an invalid question_id."""
+    data = json.dumps({
+        'answer': 'not sure',
+        'question_id': 12345
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'The "question_id" is invalid',
+        'status': 400
+    }
+
+
+def test_get_answer(client, logged_in_headers, admin_logged_in_headers):
+    """Test the answers/<id> route."""
+    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=1, question_id=1)
+    db.session.add(answer)
+    db.session.commit()
+    rv = client.get('/api/v1/answers/1', headers=logged_in_headers)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'id': 1,
+        'question_id': 1,
+        'user_id': 1
+    }
+
+    rv = client.get('/api/v1/answers/1', headers=admin_logged_in_headers)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'Administrators are not authorized to proceed with this action',
+        'status': 403
+    }
+
+
+def test_get_answer_not_found(client, logged_in_headers):
+    """Test getting a non-existent answer using the answers/<id> route."""
+    rv = client.get('/api/v1/answers/1', headers=logged_in_headers)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'The answer was not found',
+        'status': 404
+    }
+
+
+def test_get_answer_different_user(client, logged_in_headers):
+    """Test accessing the answer of a different user in the answers/<id> route."""
+    user = User(ad_guid='5609c5ec-c0df-4480-a94b-b6eb0fc4c066')
+    db.session.add(user)
+    db.session.commit()
+    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=user.id, question_id=1)
+    db.session.add(answer)
+    db.session.commit()
+    rv = client.get('/api/v1/answers/1', headers=logged_in_headers)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'This answer is not associated with your account',
+        'status': 401
+    }
+
+
+def test_get_answers(client, logged_in_headers, admin_logged_in_headers):
+    """Test the answers route."""
+    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=1, question_id=1)
+    answer2 = Answer(answer=Answer.hash_answer('green'), user_id=1, question_id=2)
+    answer3 = Answer(answer=Answer.hash_answer('Buzz Lightyear'), user_id=1, question_id=3)
+    answer4 = Answer(answer=Answer.hash_answer('Hamm'), user_id=2, question_id=3)
+    db.session.add(answer)
+    db.session.add(answer2)
+    db.session.add(answer3)
+    db.session.add(answer4)
+    db.session.commit()
+    rv = client.get('/api/v1/answers', headers=logged_in_headers)
+    items = [
+        {
+            'id': 1,
+            'question_id': 1,
+            'url': 'http://localhost/api/v1/answers/1',
+            'user_id': 1
+        },
+        {
+            'id': 2,
+            'question_id': 2,
+            'url': 'http://localhost/api/v1/answers/2',
+            'user_id': 1
+        },
+        {
+            'id': 3,
+            'question_id': 3,
+            'url': 'http://localhost/api/v1/answers/3',
+            'user_id': 1
+        }
+    ]
+    assert json.loads(rv.data.decode('utf-8'))['items'] == items
+
+    rv = client.get('/api/v1/answers', headers=admin_logged_in_headers)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'Administrators are not authorized to proceed with this action',
+        'status': 403
     }

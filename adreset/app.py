@@ -75,9 +75,9 @@ def add_jwt_claims(identity):
     elif ad.check_user_group_membership(identity):
         # Make sure there are enough questions configured for the application to be usable
         total_questions = db.session.query(func.count(Question.question)).scalar()
-        if total_questions < current_app.config['MINIMUM_QUESTIONS']:
+        if total_questions < current_app.config['REQUIRED_ANSWERS']:
             log.error('There are {0} questions configured. There must be at least {1}.'
-                      .format(total_questions, current_app.config['MINIMUM_QUESTIONS']))
+                      .format(total_questions, current_app.config['REQUIRED_ANSWERS']))
             raise ValidationError('The administrator has not finished configuring the application')
         else:
             return {'roles': ['user']}

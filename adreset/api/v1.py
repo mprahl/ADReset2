@@ -2,16 +2,16 @@
 
 from __future__ import unicode_literals
 
-from flask import Blueprint, jsonify, request
-from werkzeug.exceptions import NotFound
+from flask import Blueprint, jsonify, request, current_app
+from werkzeug.exceptions import NotFound, Unauthorized
 from six import string_types
-from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
+from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt, get_jwt_identity
 from sqlalchemy import func
 
 from adreset import version
 from adreset.error import ValidationError
 import adreset.ad
-from adreset.models import db, User, BlacklistedToken, Question
+from adreset.models import db, User, BlacklistedToken, Question, Answer
 from adreset.api.decorators import paginate, admin_required, user_required
 
 
@@ -131,3 +131,97 @@ def add_question():
     db.session.add(question)
     db.session.commit()
     return jsonify(question.to_json()), 201
+
+
+@api_v1.route('/answers')
+@user_required
+@paginate
+def get_answers():
+    """
+    List all the answers associated with the user.
+
+    :rtype: flask.Response
+    """
+    user_ad_guid = get_jwt_identity()
+    user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
+    return Answer.query.filter_by(user_id=user_id)
+
+
+@api_v1.route('/answers/<int:answer_id>')
+@user_required
+def get_answer(answer_id):
+    """
+    List a specific answer.
+
+    :rtype: flask.Response
+    """
+    user_ad_guid = get_jwt_identity()
+    user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
+    answer = Answer.query.get(answer_id)
+    if answer:
+        if answer.user_id == user_id:
+            return jsonify(answer.to_json(include_url=False))
+        else:
+            raise Unauthorized('This answer is not associated with your account')
+    else:
+        raise NotFound('The answer was not found')
+
+
+@api_v1.route('/answers', methods=['POST'])
+@user_required
+def add_answer():
+    """
+    Add a user's secret answer tied to an administrator approved question.
+
+    :rtype: flask.Response
+    """
+    req_json = request.get_json(force=True)
+    if not req_json.get('answer'):
+        raise ValidationError('The answer was not provided or was empty')
+    elif not isinstance(req_json['answer'], string_types):
+        raise ValidationError('The answer must be a string')
+    elif len(req_json['answer']) < current_app.config['ANSWERS_MINIMUM_LENGTH']:
+        raise ValidationError('The answer must be at least {0} characters long'.format(
+            current_app.config['ANSWERS_MINIMUM_LENGTH']))
+    elif req_json.get('question_id') is None:
+        raise ValidationError('The "question_id" parameter was not provided or was empty')
+    elif not isinstance(req_json['question_id'], int):
+        raise ValidationError('The "question_id" parameter must be an integer')
+
+    user_ad_guid = get_jwt_identity()
+    user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
+    # Make sure the user hasn't already set the required amount of secret answers
+    num_answers = (db.session.query(func.count(Answer.answer))).filter_by(user_id=user_id).scalar()
+    if num_answers >= current_app.config['REQUIRED_ANSWERS']:
+        raise ValidationError('You\'ve already set the required amount of secret answers')
+
+    # Make sure the supplied question_id maps to a real question in the database
+    exists = bool((db.session.query(func.count(Question.question))).filter_by(
+        id=req_json['question_id']).scalar())
+    if not exists:
+        raise ValidationError('The "question_id" is invalid')
+
+    # Make sure the question hasn't already been answered by the user
+    answered = bool((db.session.query(func.count(Answer.answer))).filter_by(
+        question_id=req_json['question_id'], user_id=user_id).scalar())
+    if answered:
+        raise ValidationError('That question has already been used by you')
+
+    if current_app.config['CASE_SENSITIVE_ANSWERS']:
+        answer = req_json['answer']
+    else:
+        answer = req_json['answer'].lower()
+
+    if current_app.config['ALLOW_DUPLICATE_ANSWERS'] is not True:
+        # Make sure the supplied answer hasn't already been used by that user
+        results = db.session.query(Answer.answer).filter_by(user_id=user_id).all()
+        for result in results:
+            if Answer.verify_answer(answer, result[0]):
+                raise ValidationError(
+                    'The supplied answer has already been used for another question')
+
+    hashed_answer = Answer.hash_answer(answer)
+    answer_obj = Answer(answer=hashed_answer, question_id=req_json['question_id'], user_id=user_id)
+    db.session.add(answer_obj)
+    db.session.commit()
+    return jsonify(answer_obj.to_json()), 201
