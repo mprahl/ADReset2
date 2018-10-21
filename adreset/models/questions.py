@@ -12,7 +12,6 @@ from adreset.error import ValidationError
 
 
 _must_be_str = 'The {0} must be a string'
-_256_or_less = 'The {0} must be less than 256 characters'
 
 
 class Question(db.Model):
@@ -31,12 +30,13 @@ class Question(db.Model):
         :param str question: the question being validated
         :return: the question being validated
         :rtype: str
-        :raises ValidationError: if the string is more than 256 characters or it is an invalid type
+        :raises ValidationError: if the string is more than 256 characters
+        :raises RuntimeError: if the question is an invalid type
         """
         if not isinstance(question, string_types):
-            raise ValidationError(_must_be_str.format(key))
+            raise RuntimeError(_must_be_str.format(key))
         elif len(question) > 256:
-            raise ValidationError(_256_or_less.format(key))
+            raise ValidationError('The question must be less than 256 characters')
         return question
 
     def to_json(self, include_url=True):
