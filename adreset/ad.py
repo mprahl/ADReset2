@@ -136,11 +136,19 @@ class AD(object):
                 self.connection.user = '{0}@{1}'.format(username, domain)
         self.connection.password = password
 
+        svc_account = self._get_config('AD_SERVICE_USERNAME') == username
         if not self.connection.bind():
-            self.log('info', 'The user "{0}" failed to login'.format(self.connection.user))
-            raise Unauthorized('The username or password is incorrect. Please try again.')
+            if svc_account:
+                self.log('error', 'The service account failed to login')
+                raise ADError(self.unknown_error_msg)
+            else:
+                self.log('info', 'The user "{0}" failed to login'.format(self.connection.user))
+                raise Unauthorized('The username or password is incorrect. Please try again.')
         else:
-            self.log('info', 'The user "{0}" logged in successfully'.format(self.connection.user))
+            if svc_account:
+                self.log('info', 'The service account logged in successfully')
+            else:
+                self.log('info', 'The user logged in successfully')
 
     def service_account_login(self):
         """Login using the configured service account."""
