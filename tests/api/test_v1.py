@@ -306,7 +306,7 @@ def test_add_answer_no_question_id(client, logged_in_headers):
     })
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': 'The "question_id" parameter was not provided or was empty',
+        'message': 'The parameter "question_id" must not be empty',
         'status': 400
     }
 

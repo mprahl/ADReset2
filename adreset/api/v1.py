@@ -18,6 +18,33 @@ from adreset.api.decorators import paginate, admin_required, user_required
 api_v1 = Blueprint('api_v1', __name__)
 
 
+def _validate_api_input(json_req, key, expected_type):
+    """
+    Validate the API input to ensure it is not empty and the correct type.
+
+    :param dict json_req: the JSON of the Flask request
+    :param str key: the key of the input to validate
+    :param type expected_type: the type the input should be
+    :raises ValidationError: if the input is empty or the wrong type
+    """
+    value = json_req.get(key)
+    if value is not False and value != 0 and not value:
+        raise ValidationError('The parameter "{0}" must not be empty'.format(key))
+    elif not isinstance(value, expected_type):
+        if expected_type == str or expected_type == string_types:
+            type_name = 'string'
+        elif expected_type == dict:
+            type_name = 'object'
+        elif expected_type == list:
+            type_name = 'array'
+        elif expected_type == int:
+            type_name = 'integer'
+        else:
+            type_name = expected_type.__name__
+
+        raise ValidationError('The parameter "{0}" must be a {1}'.format(key, type_name))
+
+
 @api_v1.route('/about')
 def about():
     """
@@ -36,11 +63,8 @@ def login():
     :rtype: flask.Response
     """
     req_json = request.get_json(force=True)
-    for required in ('username', 'password'):
-        if required not in req_json:
-            raise ValidationError('The "{0}" parameter was not provided'.format(required))
-        if not isinstance(req_json[required], string_types):
-            raise ValidationError('The "{0}" parameter must be a string'.format(required))
+    _validate_api_input(req_json, 'username', string_types)
+    _validate_api_input(req_json, 'password', string_types)
 
     ad = adreset.ad.AD()
     ad.login(req_json['username'], req_json['password'])
@@ -117,10 +141,7 @@ def add_question():
     :rtype: flask.Response
     """
     req_json = request.get_json(force=True)
-    if not req_json.get('question'):
-        raise ValidationError('The "question" parameter was not provided or was empty')
-    elif not isinstance(req_json['question'], string_types):
-        raise ValidationError('The "question" parameter must be a string')
+    _validate_api_input(req_json, 'question', string_types)
 
     exists = bool((db.session.query(func.count(Question.question))).filter_by(
         question=req_json['question']).scalar())
@@ -176,17 +197,11 @@ def add_answer():
     :rtype: flask.Response
     """
     req_json = request.get_json(force=True)
-    if not req_json.get('answer'):
-        raise ValidationError('The answer was not provided or was empty')
-    elif not isinstance(req_json['answer'], string_types):
-        raise ValidationError('The answer must be a string')
-    elif len(req_json['answer']) < current_app.config['ANSWERS_MINIMUM_LENGTH']:
+    _validate_api_input(req_json, 'answer', string_types)
+    _validate_api_input(req_json, 'question_id', int)
+    if len(req_json['answer']) < current_app.config['ANSWERS_MINIMUM_LENGTH']:
         raise ValidationError('The answer must be at least {0} characters long'.format(
             current_app.config['ANSWERS_MINIMUM_LENGTH']))
-    elif req_json.get('question_id') is None:
-        raise ValidationError('The "question_id" parameter was not provided or was empty')
-    elif not isinstance(req_json['question_id'], int):
-        raise ValidationError('The "question_id" parameter must be an integer')
 
     user_ad_guid = get_jwt_identity()
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
