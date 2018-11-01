@@ -305,19 +305,6 @@ class AD(object):
         """
         return bool(self.get_domain_attribute('pwdProperties'))
 
-    @property
-    def min_pwd_age(self):
-        """
-        Get the minimum age a password must be before being changed in days.
-
-        :rtype: int
-        :return: an integer specfying how many days a password must be set for before changing it
-        """
-        min_pwd_age = int(self.get_domain_attribute('minPwdAge'))
-        # Multiply by negative one to make the number positive, then divide by
-        # 864000000000 (1 day in file time)
-        return int((min_pwd_age * -1) / 864000000000)
-
     def match_min_pwd_length(self, password):
         """
         Determine if a password meets the domain's length requirements.

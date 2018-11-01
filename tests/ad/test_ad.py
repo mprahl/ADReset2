@@ -60,12 +60,6 @@ def test_get_pw_complexity_required(mock_ad):
     assert mock_ad.pw_complexity_required is True
 
 
-def test_get_min_pwd_age(mock_ad):
-    """Test that AD.min_pwd_age returns the correct result."""
-    mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
-    assert mock_ad.min_pwd_age == 1
-
-
 @pytest.mark.parametrize('password,complexity_required,expected', [
     ('P@ssw0rd123', True, True),
     ('P@ssw0rd123', False, True),
