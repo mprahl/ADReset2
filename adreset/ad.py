@@ -345,17 +345,6 @@ class AD(object):
         else:
             return True
 
-    def change_password(self, sam_account_name, new_password, old_password):
-        """
-        Change a user's password by supplying the old password.
-
-        :param str sam_account_name: the user's sAMAccountName
-        :param str old_password: the user's current password
-        :param str new_password: the user's new password
-        """
-        dn = self.get_dn(sam_account_name)
-        self.connection.extend.microsoft.modify_password(dn, new_password, old_password)
-
     def reset_password(self, sam_account_name, new_password):
         """
         Reset and unlock a user's password.

@@ -103,14 +103,6 @@ def test_get_loggedin_user(mock_ad):
     assert mock_ad.get_loggedin_user() == 'testuser'
 
 
-def test_change_password(mock_ad):
-    """Test the AD.change_password method."""
-    mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
-    # ldap3's mock directory doesn't actually change the password so we can only test that
-    # no exceptions were raised
-    assert mock_ad.change_password('testUser', 'NewP@ssw0rd', 'P@ssW0rd') is None
-
-
 def test_reset_password(mock_ad):
     """Test the AD.reset_password method."""
     mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
