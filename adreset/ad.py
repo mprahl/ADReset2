@@ -9,7 +9,7 @@ from ldap3.core.exceptions import LDAPSocketOpenError
 from flask import current_app
 from werkzeug.exceptions import Unauthorized
 
-from adreset.error import ConfigurationError, ADError
+from adreset.error import ConfigurationError, ADError, ValidationError
 from adreset import log
 
 
@@ -24,6 +24,8 @@ class AD(object):
     def __init__(self):
         """Initialize the AD class."""
         self._connection = None
+        # Cache the minimum password length to avoid getting the value from AD multiple times
+        self._min_pwd_length = None
 
     def __del__(self):
         """Disconnect from Active Directory."""
@@ -293,7 +295,9 @@ class AD(object):
         :rtype: int
         :return: the minimum length a password must be
         """
-        return int(self.get_domain_attribute('minPwdLength'))
+        if self._min_pwd_length is None:
+            self._min_pwd_length = self.get_domain_attribute('minPwdLength')
+        return int(self._min_pwd_length)
 
     @property
     def pw_complexity_required(self):
@@ -358,7 +362,16 @@ class AD(object):
 
         :param str sam_account_name: the user's sAMAccountName to reset
         :param str new_password: the user's new password
+        :raises ValidationError: if the new password doesn't meet the domain standards
         """
+        if not self.match_pwd_complexity(new_password):
+            raise ValidationError(
+                'The password did not match the complexity requirements. Please ensure your '
+                'password contains at least three of the four requirements: lowercase letters, '
+                'uppercase letters, numbers, and special charcters.')
+        elif not self.match_min_pwd_length(new_password):
+            raise ValidationError('The password must be at least {0} characters long'.format(
+                self.min_pwd_length))
         dn = self.get_dn(sam_account_name)
         self.connection.extend.microsoft.modify_password(dn, new_password, old_password=None)
         self.connection.extend.microsoft.unlock_account(dn)
