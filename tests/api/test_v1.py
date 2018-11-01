@@ -92,18 +92,6 @@ def test_logout(client, logged_in_headers):
     assert rv_json['message'] == 'Token has been revoked'
 
 
-def test_user_protected(client, logged_in_headers, admin_logged_in_headers):
-    """Test the /api/v1/protected route."""
-    rv = client.get('/api/v1/protected', headers=logged_in_headers)
-    assert json.loads(rv.data.decode('utf-8')) == {'message': 'placeholder'}
-
-    rv = client.get('/api/v1/protected', headers=admin_logged_in_headers)
-    assert json.loads(rv.data.decode('utf-8')) == {
-        'message': 'Administrators are not authorized to proceed with this action',
-        'status': 403
-    }
-
-
 def test_add_question(client, logged_in_headers, admin_logged_in_headers):
     """Test the /api/v1/questions POST route."""
     data = json.dumps({

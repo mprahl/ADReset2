@@ -98,13 +98,6 @@ def logout():
     return jsonify({'message': 'You were logged out successfully'})
 
 
-@api_v1.route('/protected')
-@user_required
-def protected():
-    """Add a placeholder for tests."""
-    return jsonify({'message': 'placeholder'})
-
-
 @api_v1.route('/questions')
 @jwt_required
 @paginate
