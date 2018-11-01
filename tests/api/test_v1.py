@@ -111,9 +111,9 @@ def test_add_question(client, logged_in_headers, admin_logged_in_headers):
     }
 
 
-def test_get_questions(client, logged_in_headers):
+def test_get_questions(client):
     """Test the /api/v1/questions route."""
-    rv = client.get('/api/v1/questions', headers=logged_in_headers)
+    rv = client.get('/api/v1/questions', headers={'Content-Type': 'application/json'})
     items = [
         {
             'id': 1,
@@ -146,9 +146,9 @@ def test_get_questions(client, logged_in_headers):
     assert data['meta']['total'] == 3
 
 
-def test_get_question(client, logged_in_headers):
+def test_get_question(client):
     """Test the /api/v1/questions/<id> route."""
-    rv = client.get('/api/v1/questions/2', headers=logged_in_headers)
+    rv = client.get('/api/v1/questions/2', headers={'Content-Type': 'application/json'})
     assert json.loads(rv.data.decode('utf-8')) == {
         'id': 2,
         'question': 'What is your favorite color?'

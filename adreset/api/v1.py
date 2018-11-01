@@ -99,7 +99,6 @@ def logout():
 
 
 @api_v1.route('/questions')
-@jwt_required
 @paginate
 def get_questions():
     """
@@ -111,7 +110,6 @@ def get_questions():
 
 
 @api_v1.route('/questions/<int:question_id>')
-@jwt_required
 def get_question(question_id):
     """
     List a specific question.
