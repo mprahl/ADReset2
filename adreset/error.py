@@ -5,8 +5,6 @@ from __future__ import unicode_literals
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
 
-from adreset import log
-
 
 class ValidationError(ValueError):
     """A custom exception handled by Flask to denote bad user input."""
@@ -17,9 +15,13 @@ class ValidationError(ValueError):
 class ConfigurationError(ValueError):
     """A custom exception handled by Flask to denote a bad configuration."""
 
+    pass
+
 
 class ADError(ValueError):
     """A custom exception handled by Flask to denote an error with Active Directory."""
+
+    pass
 
 
 def json_error(error):
@@ -37,8 +39,6 @@ def json_error(error):
         })
         response.status_code = error.code
     else:
-        # Log the actual exception before it's gobbled up by Flask
-        log.exception(error)
         status_code = 500
         message = None
         if isinstance(error, ValidationError):
