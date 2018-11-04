@@ -364,6 +364,7 @@ class AD(object):
         dn = self.get_dn(sam_account_name)
         self.connection.extend.microsoft.modify_password(dn, new_password, old_password=None)
         self.connection.extend.microsoft.unlock_account(dn)
+        self.log('info', 'The password for "{0}" was reset'.format(self.connection.user))
 
     def check_group_membership(self, sam_account_name, group):
         """

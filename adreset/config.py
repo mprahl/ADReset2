@@ -31,6 +31,8 @@ class Config(object):
     CASE_SENSITIVE_ANSWERS = False
     ALLOW_DUPLICATE_ANSWERS = False
     ANSWERS_MINIMUM_LENGTH = 2
+    LOCKOUT_MINUTES = 15
+    ATTEMPTS_BEFORE_LOCKOUT = 3
 
 
 class ProdConfig(Config):

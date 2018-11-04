@@ -2,16 +2,18 @@
 
 from __future__ import unicode_literals
 
+from datetime import datetime
+
 from flask import Blueprint, jsonify, request, current_app
 from werkzeug.exceptions import NotFound, Unauthorized
 from six import string_types
 from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt, get_jwt_identity
 from sqlalchemy import func
 
-from adreset import version
+from adreset import version, log
 from adreset.error import ValidationError
 import adreset.ad
-from adreset.models import db, User, BlacklistedToken, Question, Answer
+from adreset.models import db, User, BlacklistedToken, Question, Answer, FailedAttempt
 from adreset.api.decorators import paginate, admin_required, user_required
 
 
@@ -231,3 +233,110 @@ def add_answer():
     db.session.add(answer_obj)
     db.session.commit()
     return jsonify(answer_obj.to_json()), 201
+
+
+@api_v1.route('/reset/<username>', methods=['POST'])
+def reset_password(username):
+    """
+    Reset a user's password using their secret answers.
+
+    :rtype: flask.Response
+    """
+    req_json = request.get_json(force=True)
+    _validate_api_input(req_json, 'answers', list)
+    _validate_api_input(req_json, 'new_password', string_types)
+    answers = req_json['answers']
+    new_password = req_json['new_password']
+
+    # Find what the user's GUID is so the user can be found in the app's database
+    ad = adreset.ad.AD()
+    ad.service_account_login()
+    try:
+        user_ad_guid = ad.get_guid(username)
+    except adreset.error.ADError:
+        user_ad_guid = None
+
+    not_setup_msg = ('You must have configured at least {0} secret answers before resetting your '
+                     'password').format(current_app.config['REQUIRED_ANSWERS'])
+    if user_ad_guid is None:
+        msg = 'The user attempted a password reset but could not be found in Active Directory'
+        log.info({'message': msg, 'user': username})
+        raise ValidationError(not_setup_msg)
+
+    # Verify the user exists in the database
+    user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
+    if not user_id:
+        msg = 'The user attempted a password reset but does not exist in the database'
+        log.info({'message': msg, 'user': username})
+        raise ValidationError(not_setup_msg)
+
+    # Make sure the user isn't locked out
+    if User.is_user_locked_out(user_id):
+        msg = 'The user attempted a password reset but their account is locked in ADReset'
+        log.info({'message': msg, 'user': username})
+        raise Unauthorized('Your account is locked. Please try again later.')
+
+    db_answers = Answer.query.filter_by(user_id=user_id).all()
+    # Create a dictionary of question_id to answer from entries in the database. This will avoid
+    # the need to continuously loop through these answers looking for specific answers later on.
+    q_id_to_answer_db = {}
+    for answer in db_answers:
+        q_id_to_answer_db[answer.question_id] = answer.answer
+
+    # Make sure the user has all their answers configured
+    if len(q_id_to_answer_db.keys()) != current_app.config['REQUIRED_ANSWERS']:
+        msg = ('The user did not have their secret answers configured and attempted to reset their '
+               'password')
+        log.info({'message': msg, 'user': username})
+        raise ValidationError(not_setup_msg)
+
+    seen_question_ids = set()
+    for answer in answers:
+        if not isinstance(answer, dict) or 'question_id' not in answer or 'answer' not in answer:
+            raise ValidationError(
+                'The answers must be an object with the keys "question_id" and "answer"')
+        _validate_api_input(answer, 'question_id', int)
+        _validate_api_input(answer, 'answer', string_types)
+
+        if answer['question_id'] not in q_id_to_answer_db:
+            msg = ('The user answered a question they did not previously configure while '
+                   'attempting to reset their password')
+            log.info({'message': msg, 'user': username})
+            raise ValidationError(
+                'One of the answers was to a question that wasn\'t previously configured')
+        # Don't allow an attacker to enter in the same question and answer combination more than
+        # once
+        if answer['question_id'] in seen_question_ids:
+            msg = ('The user answered the same question multiple times while attempting to reset '
+                   'their password')
+            log.info({'message': msg, 'user': username})
+            raise ValidationError('You must answer {0} different questions'.format(
+                current_app.config['REQUIRED_ANSWERS']))
+        seen_question_ids.add(answer['question_id'])
+
+    # Only check if the answers are correct after knowing the input is valid as to not give away
+    # any hints as to which answer is incorrect for an attacker
+    for answer in answers:
+        if current_app.config['CASE_SENSITIVE_ANSWERS'] is True:
+            input_answer = answer['answer']
+        else:
+            input_answer = answer['answer'].lower()
+        is_correct_answer = Answer.verify_answer(
+            input_answer, q_id_to_answer_db[answer['question_id']])
+        if is_correct_answer is not True:
+            log.info({'message': 'The user entered an incorrect answer', 'user': username})
+            failed_attempt = FailedAttempt(user_id=user_id, time=datetime.utcnow())
+            db.session.add(failed_attempt)
+            db.session.commit()
+
+            if User.is_user_locked_out(user_id):
+                msg = 'The user failed too many password reset attempts. They are now locked out.'
+                log.info({'message': msg, 'user': username})
+                raise Unauthorized('You have answered incorrectly too many times. Your account is '
+                                   'now locked. Please try again later.')
+            raise Unauthorized('One or more answers were incorrect. Please try again.')
+
+    log.info({'message': 'The user successfully answered their questions', 'user': username})
+    ad.reset_password(username, new_password)
+    log.info({'message': 'The user successfully reset their password', 'user': username})
+    return jsonify({}), 204

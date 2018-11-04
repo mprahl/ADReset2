@@ -3,11 +3,12 @@
 from __future__ import unicode_literals
 
 import json
+from datetime import datetime
 
 import flask_jwt_extended
 
 from adreset import version
-from adreset.models import User, Question, Answer, db
+from adreset.models import User, Question, Answer, FailedAttempt, db
 
 
 def test_about(client):
@@ -393,4 +394,219 @@ def test_get_answers(client, logged_in_headers, admin_logged_in_headers):
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'Administrators are not authorized to proceed with this action',
         'status': 403
+    }
+
+
+def _configure_user():
+    """Configure testuser2 in the database."""
+    user = User(ad_guid='10385a23-6def-4990-84a8-32444e36e496')
+    db.session.add(user)
+    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=1, question_id=1)
+    answer2 = Answer(answer=Answer.hash_answer('green'), user_id=1, question_id=2)
+    answer3 = Answer(answer=Answer.hash_answer('buzz lightyear'), user_id=1, question_id=3)
+    db.session.add(answer)
+    db.session.add(answer2)
+    db.session.add(answer3)
+    db.session.commit()
+
+
+_reset_data = json.dumps({
+    'answers': [
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+        {
+            'question_id': 2,
+            'answer': 'green'
+        },
+        {
+            'question_id': 3,
+            'answer': 'buzz lightyear'
+        }
+    ],
+    'new_password': 'RedSoxWorldSeriesCh@mps'
+})
+
+
+def test_reset(client, mock_ad):
+    """Test the reset route when the user is properly configured."""
+    _configure_user()
+    headers = {'Content-Type': 'application/json'}
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=_reset_data)
+    assert rv.status_code == 204
+    assert rv.data.decode('utf-8') == ''
+
+
+def test_reset_no_user_in_ad(client, mock_ad):
+    """Test the reset route on a user that does not exist in Active Directory."""
+    headers = {'Content-Type': 'application/json'}
+    rv = client.post('/api/v1/reset/nonexistent_user', headers=headers, data=_reset_data)
+    assert rv.status_code == 400
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': ('You must have configured at least 3 secret answers before resetting your '
+                    'password'),
+        'status': 400
+    }
+
+
+def test_reset_no_user_in_db(client, mock_ad):
+    """Test the reset route on a user that does not exist in the database."""
+    headers = {'Content-Type': 'application/json'}
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=_reset_data)
+    assert rv.status_code == 400
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': ('You must have configured at least 3 secret answers before resetting your '
+                    'password'),
+        'status': 400
+    }
+
+
+def test_reset_locked_out(client, mock_ad):
+    """Test the reset route on a user that is locked out."""
+    _configure_user()
+    for _ in range(3):
+        db.session.add(FailedAttempt(user_id=1, time=datetime.utcnow()))
+    db.session.commit()
+    headers = {'Content-Type': 'application/json'}
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=_reset_data)
+    assert rv.status_code == 401
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'Your account is locked. Please try again later.',
+        'status': 401
+    }
+
+
+def test_reset_gets_locked_out(client, mock_ad):
+    """Test the reset route when a user gets locked out."""
+    _configure_user()
+    for _ in range(2):
+        db.session.add(FailedAttempt(user_id=1, time=datetime.utcnow()))
+    db.session.commit()
+    headers = {'Content-Type': 'application/json'}
+    data = json.dumps({
+        'answers': [
+            {
+                'question_id': 1,
+                'answer': 'wrong'
+            },
+            {
+                'question_id': 2,
+                'answer': 'green'
+            },
+            {
+                'question_id': 3,
+                'answer': 'buzz lightyear'
+            }
+        ],
+        'new_password': 'RedSoxWorldSeriesCh@mps'
+    })
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=data)
+    assert rv.status_code == 401
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': ('You have answered incorrectly too many times. Your account is now locked. '
+                    'Please try again later.'),
+        'status': 401
+    }
+
+
+def test_reset_not_enough_configured_answers(client, mock_ad):
+    """Test the reset route on a user that does not have enough secret answers configured."""
+    _configure_user()
+    db.session.delete(Answer.query.first())
+    db.session.commit()
+    headers = {'Content-Type': 'application/json'}
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=_reset_data)
+    assert rv.status_code == 400
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': ('You must have configured at least 3 secret answers before resetting your '
+                    'password'),
+        'status': 400
+    }
+
+
+def test_reset_invalid_question_id(client, mock_ad):
+    """Test the reset route when the user answers a question they don't have configured."""
+    _configure_user()
+    headers = {'Content-Type': 'application/json'}
+    data = json.dumps({
+        'answers': [
+            {
+                'question_id': 999,
+                'answer': 'strawberry'
+            },
+            {
+                'question_id': 2,
+                'answer': 'green'
+            },
+            {
+                'question_id': 3,
+                'answer': 'buzz lightyear'
+            }
+        ],
+        'new_password': 'RedSoxWorldSeriesCh@mps'
+    })
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=data)
+    assert rv.status_code == 400
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'One of the answers was to a question that wasn\'t previously configured',
+        'status': 400
+    }
+
+
+def test_reset_same_question(client, mock_ad):
+    """Test the reset route when the user answers the same question multiple times."""
+    _configure_user()
+    headers = {'Content-Type': 'application/json'}
+    data = json.dumps({
+        'answers': [
+            {
+                'question_id': 1,
+                'answer': 'strawberry'
+            },
+            {
+                'question_id': 1,
+                'answer': 'strawberry'
+            },
+            {
+                'question_id': 3,
+                'answer': 'buzz lightyear'
+            }
+        ],
+        'new_password': 'RedSoxWorldSeriesCh@mps'
+    })
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=data)
+    assert rv.status_code == 400
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'You must answer 3 different questions',
+        'status': 400
+    }
+
+
+def test_reset_incorrect_answer(client, mock_ad):
+    """Test the reset route when the user answers a question incorrectly."""
+    _configure_user()
+    headers = {'Content-Type': 'application/json'}
+    data = json.dumps({
+        'answers': [
+            {
+                'question_id': 1,
+                'answer': 'strawberry'
+            },
+            {
+                'question_id': 2,
+                'answer': 'I dunno'
+            },
+            {
+                'question_id': 3,
+                'answer': 'buzz lightyear'
+            }
+        ],
+        'new_password': 'RedSoxWorldSeriesCh@mps'
+    })
+    rv = client.post('/api/v1/reset/testuser2', headers=headers, data=data)
+    assert rv.status_code == 401
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'One or more answers were incorrect. Please try again.',
+        'status': 401
     }
