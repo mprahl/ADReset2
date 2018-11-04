@@ -167,6 +167,18 @@ def get_answers():
     return Answer.query.filter_by(user_id=user_id)
 
 
+@api_v1.route('/answers/<username>')
+@paginate
+def get_answers_unauthenticated(username):
+    """
+    List all the answers associated with the input user.
+
+    :rtype: flask.Response
+    """
+    user_id = User.get_id_from_ad_username(username)
+    return Answer.query.filter_by(user_id=user_id)
+
+
 @api_v1.route('/answers/<int:answer_id>')
 @user_required
 def get_answer(answer_id):

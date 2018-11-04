@@ -58,16 +58,16 @@ def paginate(func):
         }
         if p.has_prev:
             pages['previous'] = url_for(
-                request.endpoint, page=p.prev_num, per_page=per_page, _external=True)
+                request.endpoint, page=p.prev_num, per_page=per_page, _external=True, **kwargs)
 
         if p.has_next:
             pages['next'] = url_for(
-                request.endpoint, page=p.next_num, per_page=per_page, _external=True)
+                request.endpoint, page=p.next_num, per_page=per_page, _external=True, **kwargs)
 
         pages['first'] = url_for(
-            request.endpoint, page=1, per_page=per_page, _external=True)
+            request.endpoint, page=1, per_page=per_page, _external=True, **kwargs)
         pages['last'] = url_for(
-            request.endpoint, page=p.pages, per_page=per_page, _external=True)
+            request.endpoint, page=p.pages, per_page=per_page, _external=True, **kwargs)
 
         return jsonify({
             'items': [item.to_json() for item in p.items],

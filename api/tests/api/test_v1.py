@@ -403,6 +403,42 @@ def test_get_answers(client, logged_in_headers, admin_logged_in_headers):
     }
 
 
+# logged_in_headers isn't directly used but it causes the user entry to be created in the DB
+def test_get_answers_unauthenticated(client, logged_in_headers, mock_ad):
+    """Test the unauthenticated answers route."""
+    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=1, question_id=1)
+    answer2 = Answer(answer=Answer.hash_answer('green'), user_id=1, question_id=2)
+    answer3 = Answer(answer=Answer.hash_answer('Buzz Lightyear'), user_id=1, question_id=3)
+    answer4 = Answer(answer=Answer.hash_answer('Hamm'), user_id=2, question_id=3)
+    db.session.add(answer)
+    db.session.add(answer2)
+    db.session.add(answer3)
+    db.session.add(answer4)
+    db.session.commit()
+    rv = client.get('/api/v1/answers/testuser2', headers={'Content-Type': 'application/json'})
+    items = [
+        {
+            'id': 1,
+            'question_id': 1,
+            'url': 'http://localhost/api/v1/answers/1',
+            'user_id': 1
+        },
+        {
+            'id': 2,
+            'question_id': 2,
+            'url': 'http://localhost/api/v1/answers/2',
+            'user_id': 1
+        },
+        {
+            'id': 3,
+            'question_id': 3,
+            'url': 'http://localhost/api/v1/answers/3',
+            'user_id': 1
+        }
+    ]
+    assert json.loads(rv.data.decode('utf-8'))['items'] == items
+
+
 def _configure_user():
     """Configure testuser2 in the database."""
     user = User(ad_guid='10385a23-6def-4990-84a8-32444e36e496')
