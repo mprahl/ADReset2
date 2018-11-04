@@ -274,7 +274,7 @@ def reset_password(username):
     user_id = User.get_id_from_ad_username(username, ad)
     if not user_id:
         msg = 'The user attempted a password reset but does not exist in the database'
-        log.info({'message': msg, 'user': username})
+        log.debug({'message': msg, 'user': username})
         raise ValidationError(not_setup_msg)
 
     # Make sure the user isn't locked out
@@ -294,7 +294,7 @@ def reset_password(username):
     if len(q_id_to_answer_db.keys()) != current_app.config['REQUIRED_ANSWERS']:
         msg = ('The user did not have their secret answers configured and attempted to reset their '
                'password')
-        log.info({'message': msg, 'user': username})
+        log.debug({'message': msg, 'user': username})
         raise ValidationError(not_setup_msg)
 
     seen_question_ids = set()
@@ -343,7 +343,7 @@ def reset_password(username):
                                    'now locked. Please try again later.')
             raise Unauthorized('One or more answers were incorrect. Please try again.')
 
-    log.info({'message': 'The user successfully answered their questions', 'user': username})
+    log.debug({'message': 'The user successfully answered their questions', 'user': username})
     ad.reset_password(username, new_password)
     log.info({'message': 'The user successfully reset their password', 'user': username})
     return jsonify({}), 204
