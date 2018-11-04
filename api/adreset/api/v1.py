@@ -199,6 +199,23 @@ def get_answer(answer_id):
         raise NotFound('The answer was not found')
 
 
+@api_v1.route('/answers', methods=['DELETE'])
+@user_required
+def delete_answers():
+    """
+    Delete the user's configured answers.
+
+    :rtype: flask.Response
+    """
+    user_ad_guid = get_jwt_identity()
+    user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
+    answers = Answer.query.filter_by(user_id=user_id).all()
+    for answer in answers:
+        db.session.delete(answer)
+    db.session.commit()
+    return jsonify({}), 204
+
+
 @api_v1.route('/answers', methods=['POST'])
 @user_required
 def add_answer():

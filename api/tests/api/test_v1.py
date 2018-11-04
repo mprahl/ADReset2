@@ -439,6 +439,27 @@ def test_get_answers_unauthenticated(client, logged_in_headers, mock_ad):
     assert json.loads(rv.data.decode('utf-8'))['items'] == items
 
 
+def test_delete_answers(client, logged_in_headers, admin_logged_in_headers):
+    """Test the answers route using the DELETE method to reset the user's configured answers."""
+    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=1, question_id=1)
+    answer2 = Answer(answer=Answer.hash_answer('green'), user_id=1, question_id=2)
+    answer3 = Answer(answer=Answer.hash_answer('Buzz Lightyear'), user_id=1, question_id=3)
+    db.session.add(answer)
+    db.session.add(answer2)
+    db.session.add(answer3)
+    db.session.commit()
+    rv = client.delete('/api/v1/answers', headers=logged_in_headers)
+    assert rv.status_code == 204
+    assert rv.data.decode('utf-8') == ''
+    assert len(Answer.query.filter_by(user_id=1).all()) == 0
+
+    rv = client.delete('/api/v1/answers', headers=admin_logged_in_headers)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'Administrators are not authorized to proceed with this action',
+        'status': 403
+    }
+
+
 def _configure_user():
     """Configure testuser2 in the database."""
     user = User(ad_guid='10385a23-6def-4990-84a8-32444e36e496')
