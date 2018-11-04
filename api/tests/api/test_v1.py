@@ -14,7 +14,13 @@ from adreset.models import User, Question, Answer, FailedAttempt, db
 def test_about(client):
     """Test the /api/v1/about route."""
     rv = client.get('/api/v1/about')
-    assert json.loads(rv.data.decode('utf-8')) == {'version': version}
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'allow_duplicate_answers': False,
+        'answers_minimum_length': 2,
+        'case_sensitive': False,
+        'required_answers': 3,
+        'version': version
+    }
 
 
 def test_insert_headers(client):

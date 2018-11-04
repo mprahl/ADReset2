@@ -54,7 +54,13 @@ def about():
 
     :rtype: flask.Response
     """
-    return jsonify({'version': version})
+    return jsonify({
+        'allow_duplicate_answers': current_app.config['ALLOW_DUPLICATE_ANSWERS'],
+        'answers_minimum_length': current_app.config['ANSWERS_MINIMUM_LENGTH'],
+        'case_sensitive': current_app.config['CASE_SENSITIVE_ANSWERS'],
+        'required_answers': current_app.config['REQUIRED_ANSWERS'],
+        'version': version
+    })
 
 
 @api_v1.route('/login', methods=['POST'])
