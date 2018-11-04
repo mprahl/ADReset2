@@ -9,4 +9,6 @@ matrix:
 install:
   - pip install tox
 script:
+  - pushd api
   - tox
+  - popd
