@@ -8,6 +8,7 @@ from flask import current_app
 from sqlalchemy import func
 
 from adreset.models import db
+import adreset.ad
 
 
 class User(db.Model):
@@ -20,6 +21,27 @@ class User(db.Model):
     answers = db.relationship('adreset.models.questions.Answer', backref='user')
     blacklisted_tokens = db.relationship('adreset.models.tokens.BlacklistedToken', backref='user')
     failed_reset__attempts = db.relationship('FailedAttempt', backref='user')
+
+    @staticmethod
+    def get_id_from_ad_username(username, ad=None):
+        """
+        Query Active Directory to find the user's ID in the database.
+
+        :param str username: the user's sAMAccountName
+        :kwarg adreset.ad.AD ad: an optional Active Directory session that is logged in with the
+            service account
+        :return: the user's ID in the database
+        :rtype: int or None
+        """
+        if not ad:
+            ad = adreset.ad.AD()
+            ad.service_account_login()
+        try:
+            user_guid = ad.get_guid(username)
+        except adreset.error.ADError:
+            return None
+
+        return db.session.query(User.id).filter_by(ad_guid=user_guid).scalar()
 
     @staticmethod
     def is_user_locked_out(user_id):

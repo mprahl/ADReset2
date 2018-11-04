@@ -254,23 +254,12 @@ def reset_password(username):
     answers = req_json['answers']
     new_password = req_json['new_password']
 
-    # Find what the user's GUID is so the user can be found in the app's database
-    ad = adreset.ad.AD()
-    ad.service_account_login()
-    try:
-        user_ad_guid = ad.get_guid(username)
-    except adreset.error.ADError:
-        user_ad_guid = None
-
     not_setup_msg = ('You must have configured at least {0} secret answers before resetting your '
                      'password').format(current_app.config['REQUIRED_ANSWERS'])
-    if user_ad_guid is None:
-        msg = 'The user attempted a password reset but could not be found in Active Directory'
-        log.info({'message': msg, 'user': username})
-        raise ValidationError(not_setup_msg)
-
     # Verify the user exists in the database
-    user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
+    ad = adreset.ad.AD()
+    ad.service_account_login()
+    user_id = User.get_id_from_ad_username(username, ad)
     if not user_id:
         msg = 'The user attempted a password reset but does not exist in the database'
         log.info({'message': msg, 'user': username})
