@@ -13,7 +13,7 @@ To setup a development environment:
 To start the development web server, run:
 
 ```bash
-$ scripts/run-flask.sh
+$ scripts/run-api.sh
 ```
 
 
