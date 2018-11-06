@@ -1,19 +1,46 @@
-language: python
 matrix:
   include:
-    - python: 2.7
-      env: TOXENV=py27
-    - python: 3.6
-      env: TOXENV=py36
-    - python: 3.7
-      # https://github.com/travis-ci/travis-ci/issues/9069#issuecomment-425720905
-      sudo: required
-      dist: xenial
-      env: TOXENV=py37
-    - env: TOXENV=flake8
-install:
-  - pip install tox
-script:
-  - pushd api
-  - tox
-  - popd
+  - language: python
+    python: 2.7
+    env: TOXENV=py27
+    install:
+    - pip install tox
+    script:
+    - cd api && tox
+
+  - language: python
+    python: 3.6
+    env: TOXENV=py36
+    install:
+    - pip install tox
+    script:
+    - cd api && tox
+
+  - language: python
+    python: 3.7
+    env: TOXENV=py37
+    # https://github.com/travis-ci/travis-ci/issues/9069#issuecomment-425720905
+    sudo: required
+    dist: xenial
+    install:
+    - pip install tox
+    script:
+    - cd api && tox
+
+  - language: python
+    env: TOXENV=flake8
+    install:
+    - pip install tox
+    script:
+    - cd api && tox
+
+  - language: node_js
+    node_js:
+    - '8'
+    cache:
+      directories:
+      - node_modules
+    before_install:
+    - cd frontend
+    script:
+    - npm test
