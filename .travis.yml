@@ -43,4 +43,5 @@ matrix:
     before_install:
     - cd frontend
     script:
+    - npm run lint
     - npm test

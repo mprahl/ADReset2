@@ -10,11 +10,19 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "lint": "eslint  --ext .jsx --ext .js src",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": "react-app"
+    "env": {
+      "browser": true,
+      "jest": true
+    },
+    "extends": "airbnb",
+    "rules": {
+      "react/prefer-stateless-function": "off"
+    }
   },
   "browserslist": [
     ">0.2%",
@@ -24,6 +32,7 @@
   ],
   "devDependencies": {
     "@types/react": "^16.4.18",
-    "@types/react-dom": "^16.0.9"
+    "@types/react-dom": "^16.0.9",
+    "eslint-config-airbnb": "^17.1.0"
   }
 }
