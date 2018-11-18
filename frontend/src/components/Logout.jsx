@@ -3,6 +3,7 @@ import { Redirect } from 'react-router-dom';
 import { PropTypes } from 'prop-types';
 
 import AuthService from './AuthService';
+import Spinner from './Spinner';
 
 
 class Logout extends Component {
@@ -33,10 +34,10 @@ class Logout extends Component {
   render() {
     if (this.props.loggedIn) {
       this.logout();
+      return <Spinner />;
     }
-
     return (
-      <Redirect to="/" />
+      <Redirect to="/login" />
     );
   }
 }
