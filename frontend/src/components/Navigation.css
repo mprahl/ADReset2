@@ -1,0 +1,25 @@
+.navbar {
+    background-color: #2C3E50 !important;
+}
+
+.nav-link {
+    color: rgb(255, 255, 255, .95) !important;
+    outline: 0;
+}
+
+.nav-link:hover {
+    color: rgb(255, 255, 255, .75) !important;
+}
+
+.navbar-brand {
+    padding: 0 !important;
+    outline: 0;
+}
+
+.navbar-logo {
+    height: 40px;
+}
+
+.navbar {
+    margin-bottom: 2rem;
+}

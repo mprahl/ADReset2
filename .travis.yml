@@ -44,4 +44,3 @@ matrix:
     - cd frontend
     script:
     - npm run lint
-    - npm test

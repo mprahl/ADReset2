@@ -1,0 +1,8 @@
+.Toastify__toast-body {
+    padding-right: 5px;
+    padding-left: 5px;
+}
+
+button[disabled] {
+    cursor: not-allowed;
+}

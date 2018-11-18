@@ -1,0 +1,56 @@
+.login-form-wrapper {
+    background-color: #2C3E50;
+    opacity: .90;
+    max-width: 550px;
+    margin-top: 100px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 5px 5px 10px 0px rgba(50, 50, 50, 0.52);
+}
+
+.login-logo {
+    height: 50px;
+    margin-top: 30px;
+}
+
+.form-header {
+    font-size: 110%;
+    margin-top: 20px;
+    color: #dfe1e2;
+}
+
+.login-form {
+    padding: 15px 45px 30px 45px;
+}
+
+.form-group {
+    /* This is so that the icons can be position absolute */
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    top: 7px;
+    left: 5px;
+}
+
+.login-input {
+    padding-left: 35px;
+}
+
+.login-btn {
+    color: #dfe1e2;
+    margin-top: 15px;
+    background-color: #00a1f1;
+}
+
+.login-btn:not([disabled]):hover {
+    background-color: #00a1f1be;
+}
+
+.btn-icon {
+    margin-right: 7.5px;
+    color: #dfe1e2 !important;
+}
