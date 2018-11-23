@@ -66,13 +66,13 @@ def add_jwt_claims(identity):
     """
     Verify the user is authorized and add the role (admin or user) to the JWT.
 
-    :param str identity: the user's GUID stored in the JWT
+    :param dict identity: a dictionary with user's GUID stored
     """
     ad = adreset.ad.AD()
     ad.service_account_login()
-    if ad.check_admin_group_membership(identity):
+    if ad.check_admin_group_membership(identity['guid']):
         return {'roles': ['admin']}
-    elif ad.check_user_group_membership(identity):
+    elif ad.check_user_group_membership(identity['guid']):
         # Make sure there are enough questions configured for the application to be usable
         total_questions = db.session.query(func.count(Question.question)).scalar()
         if total_questions < current_app.config['REQUIRED_ANSWERS']:

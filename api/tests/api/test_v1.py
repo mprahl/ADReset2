@@ -46,7 +46,8 @@ def test_login(client, mock_user_ad):
     guid = '10385a23-6def-4990-84a8-32444e36e496'
     assert User.query.filter_by(ad_guid=guid).first()
     decoded_token = flask_jwt_extended.decode_token(rv_json['token'])
-    assert decoded_token['sub'] == guid
+    assert decoded_token['sub']['guid'] == guid
+    assert decoded_token['sub']['username'] == 'testuser2'
     assert decoded_token['user_claims']['roles'] == ['user']
 
 
@@ -80,7 +81,8 @@ def test_admin_login(client, mock_admin_ad):
     guid = '5609c5ec-c0df-4480-a94b-b6eb0fc4c066'
     assert User.query.filter_by(ad_guid=guid).first()
     decoded_token = flask_jwt_extended.decode_token(rv_json['token'])
-    assert decoded_token['sub'] == guid
+    assert decoded_token['sub']['guid'] == guid
+    assert decoded_token['sub']['username'] == 'testuser'
     assert decoded_token['user_claims']['roles'] == ['admin']
 
 

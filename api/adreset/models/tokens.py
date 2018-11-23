@@ -23,7 +23,7 @@ class BlacklistedToken(db.Model):
 
         :param dict token: the decoded token to blacklist
         """
-        user = User.query.filter_by(ad_guid=token['sub']).one()
+        user = User.query.filter_by(ad_guid=token['sub']['guid']).one()
         db_token = BlacklistedToken(
             jti=token['jti'],
             user_id=user.id,

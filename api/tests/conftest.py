@@ -93,7 +93,7 @@ def admin_logged_in_headers(mock_admin_ad):
     user = User(ad_guid=guid)
     db.session.add(user)
     db.session.commit()
-    token = create_access_token(identity=guid)
+    token = create_access_token(identity={'guid': guid, 'username': 'testuser'})
     return {
         'Authorization': 'Bearer {0}'.format(token),
         'Content-Type': 'application/json'
@@ -108,7 +108,7 @@ def logged_in_headers(mock_user_ad):
     user = User(ad_guid=guid)
     db.session.add(user)
     db.session.commit()
-    token = create_access_token(identity=guid)
+    token = create_access_token(identity={'guid': guid, 'username': 'testuser2'})
     return {
         'Authorization': 'Bearer {0}'.format(token),
         'Content-Type': 'application/json'

@@ -76,7 +76,8 @@ def login():
 
     ad = adreset.ad.AD()
     ad.login(req_json['username'], req_json['password'])
-    guid = ad.get_guid(ad.get_loggedin_user())
+    username = ad.get_loggedin_user()
+    guid = ad.get_guid(username)
     user = User.query.filter_by(ad_guid=guid).first()
     # If the user doesn't exist in the database, this must be their first time logging in,
     # therefore, an entry for that user must be added to the database
@@ -86,9 +87,9 @@ def login():
         db.session.add(user)
         db.session.commit()
         ad.log('debug', 'The user was successfully created in the database')
-    # The token's identity uses the user's GUID since that is unique across the AD Forest and won't
+    # The token's identity has the user's GUID since that is unique across the AD Forest and won't
     # change if the account gets renamed
-    token = create_access_token(identity=user.ad_guid)
+    token = create_access_token(identity={'guid': user.ad_guid, 'username': username})
     return jsonify({'token': token})
 
 
@@ -162,7 +163,7 @@ def get_answers():
 
     :rtype: flask.Response
     """
-    user_ad_guid = get_jwt_identity()
+    user_ad_guid = get_jwt_identity()['guid']
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
     return Answer.query.filter_by(user_id=user_id)
 
@@ -187,7 +188,7 @@ def get_answer(answer_id):
 
     :rtype: flask.Response
     """
-    user_ad_guid = get_jwt_identity()
+    user_ad_guid = get_jwt_identity()['guid']
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
     answer = Answer.query.get(answer_id)
     if answer:
@@ -207,7 +208,7 @@ def delete_answers():
 
     :rtype: flask.Response
     """
-    user_ad_guid = get_jwt_identity()
+    user_ad_guid = get_jwt_identity()['guid']
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
     answers = Answer.query.filter_by(user_id=user_id).all()
     for answer in answers:
@@ -231,7 +232,7 @@ def add_answer():
         raise ValidationError('The answer must be at least {0} characters long'.format(
             current_app.config['ANSWERS_MINIMUM_LENGTH']))
 
-    user_ad_guid = get_jwt_identity()
+    user_ad_guid = get_jwt_identity()['guid']
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
     # Make sure the user hasn't already set the required amount of secret answers
     num_answers = (db.session.query(func.count(Answer.answer))).filter_by(user_id=user_id).scalar()
