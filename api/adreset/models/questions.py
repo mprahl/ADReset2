@@ -20,6 +20,7 @@ class Question(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     question = db.Column(db.String(256), nullable=False, unique=True)
     answers = db.relationship('Answer', backref='question')
+    enabled = db.Column(db.Boolean, default=True, nullable=False)
 
     @validates('question')
     def validate_question(self, key, question):
@@ -43,7 +44,8 @@ class Question(db.Model):
         """Represent the row as a dictionary for JSON output."""
         rv = {
             'id': self.id,
-            'question': self.question
+            'question': self.question,
+            'enabled': self.enabled,
         }
         if include_url:
             rv['url'] = url_for('api_v1.get_question', question_id=self.id, _external=True)

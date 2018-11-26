@@ -41,6 +41,8 @@ def _validate_api_input(json_req, key, expected_type):
             type_name = 'array'
         elif expected_type == int:
             type_name = 'integer'
+        elif expected_type == bool:
+            type_name = 'boolean'
         else:
             type_name = expected_type.__name__
 
@@ -142,6 +144,8 @@ def add_question():
     """
     req_json = request.get_json(force=True)
     _validate_api_input(req_json, 'question', string_types)
+    if 'enabled' in req_json:
+        _validate_api_input(req_json, 'enabled', bool)
 
     exists = bool((db.session.query(func.count(Question.question))).filter_by(
         question=req_json['question']).scalar())
@@ -149,6 +153,8 @@ def add_question():
         raise ValidationError('The supplied question already exists')
 
     question = Question(question=req_json['question'])
+    if 'enabled' in req_json:
+        question.enabled = req_json['enabled']
     db.session.add(question)
     db.session.commit()
     return jsonify(question.to_json()), 201
@@ -239,11 +245,12 @@ def add_answer():
     if num_answers >= current_app.config['REQUIRED_ANSWERS']:
         raise ValidationError('You\'ve already set the required amount of secret answers')
 
-    # Make sure the supplied question_id maps to a real question in the database
-    exists = bool((db.session.query(func.count(Question.question))).filter_by(
-        id=req_json['question_id']).scalar())
-    if not exists:
+    # Make sure the supplied question_id maps to a real and enabled question in the database
+    question = Question.query.get(req_json['question_id'])
+    if not question:
         raise ValidationError('The "question_id" is invalid')
+    elif question.enabled is False:
+        raise ValidationError('The "question_id" is to a disabled question')
 
     # Make sure the question hasn't already been answered by the user
     answered = bool((db.session.query(func.count(Answer.answer))).filter_by(

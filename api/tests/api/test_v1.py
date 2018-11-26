@@ -108,6 +108,7 @@ def test_add_question(client, logged_in_headers, admin_logged_in_headers):
     })
     rv = client.post('/api/v1/questions', headers=admin_logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
+        'enabled': True,
         'id': 4,
         'question': 'What is your favorite movie?',
         'url': 'http://localhost/api/v1/questions/4'
@@ -120,21 +121,39 @@ def test_add_question(client, logged_in_headers, admin_logged_in_headers):
     }
 
 
+def test_add_question_disabled(client, admin_logged_in_headers):
+    """Test the /api/v1/questions POST route with "enabled" set to false."""
+    data = json.dumps({
+        'enabled': False,
+        'question': 'What is your favorite movie?',
+    })
+    rv = client.post('/api/v1/questions', headers=admin_logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'enabled': False,
+        'id': 4,
+        'question': 'What is your favorite movie?',
+        'url': 'http://localhost/api/v1/questions/4'
+    }
+
+
 def test_get_questions(client):
     """Test the /api/v1/questions route."""
     rv = client.get('/api/v1/questions', headers={'Content-Type': 'application/json'})
     items = [
         {
+            'enabled': True,
             'id': 1,
             'question': 'What is your favorite flavor of ice cream?',
             'url': 'http://localhost/api/v1/questions/1'
         },
         {
+            'enabled': True,
             'id': 2,
             'question': 'What is your favorite color?',
             'url': 'http://localhost/api/v1/questions/2'
         },
         {
+            'enabled': True,
             'id': 3,
             'question': 'What is your favorite toy?',
             'url': 'http://localhost/api/v1/questions/3'
@@ -159,6 +178,7 @@ def test_get_question(client):
     """Test the /api/v1/questions/<id> route."""
     rv = client.get('/api/v1/questions/2', headers={'Content-Type': 'application/json'})
     assert json.loads(rv.data.decode('utf-8')) == {
+        'enabled': True,
         'id': 2,
         'question': 'What is your favorite color?'
     }
@@ -197,6 +217,23 @@ def test_add_answer_already_used_question(client, logged_in_headers):
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'That question has already been used by you',
+        'status': 400
+    }
+
+
+def test_add_answer_disabled_question(client, logged_in_headers):
+    """Test that the answers POST route errors when a question is disabled."""
+    question = Question.query.get(2)
+    question.enabled = False
+    db.session.add(question)
+    db.session.commit()
+    data = json.dumps({
+        'question_id': 2,
+        'answer': 'cherry red'
+    })
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'The "question_id" is to a disabled question',
         'status': 400
     }
 
