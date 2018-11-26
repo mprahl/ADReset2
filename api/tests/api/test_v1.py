@@ -136,6 +136,27 @@ def test_add_question_disabled(client, admin_logged_in_headers):
     }
 
 
+def test_patch_question(client, logged_in_headers, admin_logged_in_headers):
+    """Test the /api/v1/questions PATCH route."""
+    data = json.dumps({
+        'question': 'What is your favorite movie?',
+        'enabled': False,
+    })
+    rv = client.patch('/api/v1/questions/1', headers=admin_logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'enabled': False,
+        'id': 1,
+        'question': 'What is your favorite movie?',
+        'url': 'http://localhost/api/v1/questions/1',
+    }
+
+    rv = client.patch('/api/v1/questions/1', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': 'You must be an administrator to proceed with this action',
+        'status': 403
+    }
+
+
 def test_get_questions(client):
     """Test the /api/v1/questions route."""
     rv = client.get('/api/v1/questions', headers={'Content-Type': 'application/json'})

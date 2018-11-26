@@ -160,6 +160,36 @@ def add_question():
     return jsonify(question.to_json()), 201
 
 
+@api_v1.route('/questions/<int:question_id>', methods=['PATCH'])
+@admin_required
+def patch_question(question_id):
+    """
+    Patch a question that users can use for their secret answers.
+
+    :rtype: flask.Response
+    """
+    req_json = request.get_json(force=True)
+    valid_keys = set(['question', 'enabled'])
+    if not valid_keys.issuperset(set(req_json.keys())):
+        raise ValidationError('Invalid keys were supplied. Please use the following keys: {0}'
+                              .format(', '.join(sorted(valid_keys))))
+
+    question = Question.query.get(question_id)
+    if not question:
+        raise NotFound('The question was not found')
+
+    if 'question' in req_json:
+        _validate_api_input(req_json, 'question', string_types)
+        question.question = req_json['question']
+
+    if 'enabled' in req_json:
+        _validate_api_input(req_json, 'enabled', bool)
+        question.enabled = req_json['enabled']
+
+    db.session.commit()
+    return jsonify(question.to_json()), 200
+
+
 @api_v1.route('/answers')
 @user_required
 @paginate
