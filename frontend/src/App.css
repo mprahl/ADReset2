@@ -6,3 +6,9 @@
 button[disabled] {
     cursor: not-allowed;
 }
+
+.thead-blue > tr > th {
+    background-color: #2C3E50 !important;
+    color: rgb(255, 255, 255, .95) !important;
+    border-color: rgb(32, 34, 37);
+}

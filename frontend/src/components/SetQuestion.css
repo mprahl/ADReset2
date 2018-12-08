@@ -1,0 +1,20 @@
+.questions-card {
+    max-width: 1200px;
+}
+
+.add-question-input {
+    max-width: 600px;
+}
+
+.secret-questions-table td {
+    vertical-align: middle;
+}
+
+.secret-questions-table .btn-link {
+    padding: 0;
+}
+
+.secret-questions-table tbody tr:last-child td:first-child {
+    padding-top: 0;
+    padding-bottom: 0;
+}

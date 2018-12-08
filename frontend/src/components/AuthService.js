@@ -44,6 +44,20 @@ class AuthService {
     return decoded.user_claims.roles[0];
   }
 
+  isAdmin() {
+    return this.isLoggedIn() && this.getRole() === 'admin';
+  }
+
+  isUser() {
+    return this.isLoggedIn() && this.getRole() === 'user';
+  }
+
+  getUsername() {
+    // This must be called after the user is logged in
+    const token = this.getToken();
+    return decode(token).sub.username;
+  }
+
   isTokenActive(token) {
     try {
       const decoded = decode(token);
@@ -68,6 +82,44 @@ class AuthService {
     localStorage.removeItem('token');
   }
 
+  getAuthHeader() {
+    return {
+      Authorization: `Bearer ${this.getToken()}`,
+    };
+  }
+
+  authenticatedAPICall(relativeURL, data = null, httpMethod = 'get', accessLevel = null) {
+    return new Promise((resolve, reject) => {
+      if (!this.isLoggedIn()) {
+        reject(new Error('You must be logged-in to perform this action'));
+      }
+
+      if (accessLevel === 'user' && !this.isUser()) {
+        reject(new Error('You must be a user to perform this action'));
+      } else if (accessLevel === 'admin' && !this.isAdmin()) {
+        reject(new Error('You must be an administrator to perform this action'));
+      }
+
+      const headers = this.getAuthHeader();
+      let axiosPromise;
+      if (httpMethod === 'get') {
+        axiosPromise = axios.get(`${this.apiURL}${relativeURL}`, { headers });
+      } else {
+        axiosPromise = axios[httpMethod](`${this.apiURL}${relativeURL}`, data, { headers });
+      }
+
+      axiosPromise
+        .then((res) => { resolve(res.data); })
+        .catch((error) => {
+          if (error.response && error.response.data) {
+            reject(new Error(error.response.data.message));
+          }
+
+          reject(new Error('An unexpected error occurred'));
+        });
+    });
+  }
+
   logout() {
     if (!this.isLoggedIn) {
       // If the user isn't logged in, then the logout route can't be called, so just remove the
@@ -76,9 +128,7 @@ class AuthService {
       return new Promise((resolve) => { resolve(); });
     }
 
-    const headers = {
-      Authorization: `Bearer ${this.getToken()}`,
-    };
+    const headers = this.getAuthHeader();
 
     return axios.post(`${this.apiURL}logout`, {}, { headers })
       .then(() => {
