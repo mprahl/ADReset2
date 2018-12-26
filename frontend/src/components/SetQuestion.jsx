@@ -70,7 +70,7 @@ class SetQuestion extends Component {
         btn.disabled = false;
       })
       .catch((error) => {
-        this.props.displayToast(error.message);
+        this.props.displayToast('error', error.message);
         btn.disabled = false;
       });
   }
