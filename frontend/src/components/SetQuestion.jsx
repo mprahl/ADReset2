@@ -120,7 +120,7 @@ class SetQuestion extends Component {
         <td>{ v.question }</td>
         <td>
           <Button onClick={this.setEnabled} color="link">
-            { v.enabled ? 'Disable' : 'Enable' }
+            {v.enabled ? 'Disable' : 'Enable'}
           </Button>
         </td>
       </tr>
@@ -154,7 +154,7 @@ class SetQuestion extends Component {
             </tr>
           </thead>
           <tbody>
-            { questions }
+            {questions}
           </tbody>
         </Table>
       </Container>
