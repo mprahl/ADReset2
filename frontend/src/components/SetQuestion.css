@@ -2,8 +2,9 @@
     max-width: 1200px;
 }
 
-.add-question-input {
-    max-width: 600px;
+.add-question-input, .editable-input {
+    max-width: 500px;
+    display: inline-block;
 }
 
 .secret-questions-table td {
@@ -17,4 +18,16 @@
 .secret-questions-table tbody tr:last-child td:first-child {
     padding-top: 0;
     padding-bottom: 0;
+}
+
+.edit-btn {
+    margin-left: 0.5rem;
+}
+
+.editable-btn {
+    margin-right: 0.25rem;
+}
+
+.editable-btn svg {
+    font-size: 175%;
 }

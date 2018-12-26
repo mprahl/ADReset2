@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { PropTypes } from 'prop-types';
 import { Container, Table, Button } from 'reactstrap';
+import CheckCircle from '@material-ui/icons/CheckCircle';
+import Cancel from '@material-ui/icons/Cancel';
 
 import './SetQuestion.css';
 import APIService from './APIService';
@@ -18,6 +20,8 @@ class SetQuestion extends Component {
       questions: [],
       loading: true,
       newSecretQuestion: '',
+      questionEditID: null,
+      questionEditText: '',
     };
     // TODO: Pass in a configurable API URL
     this.apiService = new APIService();
@@ -26,7 +30,9 @@ class SetQuestion extends Component {
     this.getQuestions = this.getQuestions.bind(this);
     this.setEnabled = this.setEnabled.bind(this);
     this.getQuestionIndex = this.getQuestionIndex.bind(this);
-    this.handleInputEnterKey = this.handleInputEnterKey.bind(this);
+    this.handleNewQuestionEnter = this.handleNewQuestionEnter.bind(this);
+    this.setQuestionText = this.setQuestionText.bind(this);
+    this.handleEditQuestionKeys = this.handleEditQuestionKeys.bind(this);
   }
 
   componentDidMount() {
@@ -75,6 +81,35 @@ class SetQuestion extends Component {
       });
   }
 
+  setQuestionText(event) {
+    let btn = event.target;
+    // If the target is the icon, we must traverse the DOM to find the button to disable it
+    while (btn.tagName !== 'BUTTON') {
+      btn = btn.parentElement;
+    }
+    btn.disabled = true;
+    const id = this.state.questionEditID;
+    if (this.state.questions[this.getQuestionIndex(id)].question === this.state.questionEditText) {
+      this.setState({ questionEditID: null, questionEditText: '' });
+      btn.disabled = false;
+      return;
+    }
+
+    this.apiService.patchSecretQuestion(id, { question: this.state.questionEditText })
+      .then((data) => {
+        const { questions } = this.state;
+        questions[this.getQuestionIndex(id)].question = data.question;
+        this.setState({ questions });
+        this.props.displayToast('success', 'The question was updated');
+        this.setState({ questionEditID: null, questionEditText: '' });
+        btn.disabled = false;
+      })
+      .catch((error) => {
+        this.props.displayToast('error', error.message);
+        btn.disabled = false;
+      });
+  }
+
   addSecretQuestion(event) {
     if (this.state.newSecretQuestion === '') {
       this.props.displayToast('error', 'You must enter a value before trying to add a secret question');
@@ -96,7 +131,19 @@ class SetQuestion extends Component {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  handleInputEnterKey(event) {
+  handleEditQuestionKeys(event) {
+    if (event.keyCode === 13) {
+      const editBtn = event.target.parentElement.querySelector('button.edit-btn');
+      editBtn.click();
+    } else if (event.keyCode === 27) {
+      const editBtn = event.target.parentElement.querySelector('button.cancel-btn');
+      editBtn.click();
+    }
+  }
+
+
+  // eslint-disable-next-line class-methods-use-this
+  handleNewQuestionEnter(event) {
     if (event.keyCode === 13) {
       const addBtn = event.target.parentElement.parentElement.querySelector('button.add-question-btn');
       addBtn.click();
@@ -116,8 +163,47 @@ class SetQuestion extends Component {
 
     const questions = this.state.questions.map(v => (
       <tr key={v.id} data-id={v.id}>
-        {/* TODO: Make this modifiable by the admin */}
-        <td>{ v.question }</td>
+        <td>
+          {
+            this.state.questionEditID === v.id
+              ? (
+                <React.Fragment>
+                  <input
+                    value={this.state.questionEditText}
+                    onChange={this.handleChange}
+                    onKeyUp={this.handleEditQuestionKeys}
+                    name="questionEditText"
+                    placeholder="Some text"
+                    className="form-control editable-input"
+                  />
+                  <Button
+                    onClick={this.setQuestionText}
+                    color="link"
+                    className="editable-btn edit-btn"
+                  >
+                    <CheckCircle />
+                  </Button>
+                  <Button
+                    onClick={() => { this.setState({ questionEditID: null, questionEditText: '' }); }}
+                    color="link"
+                    className="editable-btn cancel-btn"
+                  >
+                    <Cancel />
+                  </Button>
+                </React.Fragment>
+              )
+              : (
+                <Button
+                  onClick={() => {
+                    this.setState({ questionEditID: v.id, questionEditText: v.question });
+                  }}
+                  color="link"
+                >
+                  {v.question}
+                </Button>
+              )
+          }
+        </td>
         <td>
           <Button onClick={this.setEnabled} color="link">
             {v.enabled ? 'Disable' : 'Enable'}
@@ -130,7 +216,7 @@ class SetQuestion extends Component {
         <td>
           <input
             onChange={this.handleChange}
-            onKeyUp={this.handleInputEnterKey}
+            onKeyUp={this.handleNewQuestionEnter}
             value={this.state.newSecretQuestion}
             name="newSecretQuestion"
             className="form-control add-question-input"
