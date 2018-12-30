@@ -6,17 +6,21 @@ import './SetQuestion.css';
 import APIService from './APIService';
 import Spinner from './Spinner';
 import EditableColumn from './EditableColumn';
+import TablePagination from './TablePagination';
 
 
 class SetQuestion extends Component {
   static propTypes = {
     displayToast: PropTypes.func.isRequired,
+    history: PropTypes.object.isRequired,
+    match: PropTypes.object.isRequired,
   }
 
   constructor(props) {
     super(props);
     this.state = {
       questions: [],
+      pages: 0,
       loading: true,
       newSecretQuestion: '',
       questionEditID: null,
@@ -34,15 +38,32 @@ class SetQuestion extends Component {
   }
 
   componentDidMount() {
+    // Once the component mounts, query the API
     this.getQuestions();
   }
 
+  componentDidUpdate(prevProps) {
+    // If the page changed, then query the API again
+    if (this.props.match.params.page !== prevProps.match.params.page) {
+      this.getQuestions();
+    }
+  }
+
+  componentWillUnmount() {
+    // Cancel any outstanding GET API calls
+    this.apiService.cancelGetSecretQuestions();
+  }
+
   getQuestions() {
-    // TODO: Add pagination support
     this.setState({ loading: true });
-    this.apiService.getSecretQuestions()
+    const page = parseInt(this.props.match.params.page, 10);
+    this.apiService.getSecretQuestions(page)
       .then((data) => {
-        this.setState({ loading: false, questions: data.items });
+        this.setState({
+          loading: false,
+          questions: data.items,
+          pages: data.meta.pages,
+        });
       })
       .catch((error) => {
         this.props.displayToast('error', error.message);
@@ -197,6 +218,12 @@ class SetQuestion extends Component {
             {questions}
           </tbody>
         </Table>
+        <TablePagination
+          page={this.state.page}
+          pages={this.state.pages}
+          history={this.props.history}
+          match={this.props.match}
+        />
       </Container>
     );
   }
