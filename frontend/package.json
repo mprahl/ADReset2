@@ -31,7 +31,8 @@
     },
     "extends": "airbnb",
     "rules": {
-      "react/destructuring-assignment": "off"
+      "react/destructuring-assignment": "off",
+      "react/forbid-prop-types": "off"
     }
   },
   "browserslist": [
