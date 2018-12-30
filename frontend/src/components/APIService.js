@@ -1,23 +1,40 @@
-/* eslint-disable class-methods-use-this */
+import axios from 'axios';
+
 import AuthService from './AuthService';
 
 
 class APIService {
   constructor(apiURL) {
-    this.apiURL = apiURL || 'http://127.0.0.1:5000/api/v1/';
     this.authService = new AuthService(apiURL);
   }
 
-  getSecretQuestions() {
-    return this.authService.authenticatedAPICall('questions');
+  getSecretQuestions(page = 1) {
+    this.cancelGetSecretQuestions();
+    this.getSecretQuestionsCall = axios.CancelToken.source();
+    const axiosConfig = { cancelToken: this.getSecretQuestionsCall.token };
+    return this.authService.authenticatedAPICall(`/questions?page=${page}`, axiosConfig, 'admin');
+  }
+
+  cancelGetSecretQuestions() {
+    if (this.getSecretQuestionsCall) {
+      this.getSecretQuestionsCall.cancel();
+    }
   }
 
   addSecretQuestion(question) {
-    return this.authService.authenticatedAPICall('questions', { question }, 'post', 'admin');
+    const axiosConfig = {
+      method: 'post',
+      data: { question },
+    };
+    return this.authService.authenticatedAPICall('/questions', axiosConfig, 'admin');
   }
 
   patchSecretQuestion(questionID, data) {
-    return this.authService.authenticatedAPICall(`questions/${questionID}`, data, 'patch', 'admin');
+    const axiosConfig = {
+      method: 'patch',
+      data,
+    };
+    return this.authService.authenticatedAPICall(`/questions/${questionID}`, axiosConfig, 'admin');
   }
 }
 

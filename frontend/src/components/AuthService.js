@@ -6,14 +6,23 @@ import axios from 'axios';
 // TODO: Add a check that runs every x minutes to determine if the token is expired
 class AuthService {
   constructor(apiURL) {
-    this.apiURL = apiURL || 'http://127.0.0.1:5000/api/v1/';
+    if (apiURL) {
+      // Remove the trailing slash if present
+      if (apiURL && apiURL.endsWith('/')) {
+        this.apiURL = apiURL.slice(0, -1);
+      } else {
+        this.apiURL = apiURL;
+      }
+    } else {
+      this.apiURL = 'http://127.0.0.1:5000/api/v1';
+    }
     this.login = this.login.bind(this);
   }
 
   login(username, password) {
     const data = { username, password };
     const unexpectedMsg = 'An unexpected error occurred';
-    return axios.post(`${this.apiURL}login`, data)
+    return axios.post(`${this.apiURL}/login`, data)
       .then((res) => {
         if (res.data && res.data.token) {
           localStorage.setItem('token', res.data.token);
@@ -88,34 +97,28 @@ class AuthService {
     };
   }
 
-  authenticatedAPICall(relativeURL, data = null, httpMethod = 'get', accessLevel = null) {
+  authenticatedAPICall(relativeURL, config = null, accessLevel = null) {
     return new Promise((resolve, reject) => {
       if (!this.isLoggedIn()) {
         reject(new Error('You must be logged-in to perform this action'));
       }
 
       if (accessLevel === 'user' && !this.isUser()) {
-        reject(new Error('You must be a user to perform this action'));
+        reject(new Error('You must be an unprivileged user to perform this action'));
       } else if (accessLevel === 'admin' && !this.isAdmin()) {
         reject(new Error('You must be an administrator to perform this action'));
       }
 
       const headers = this.getAuthHeader();
-      let axiosPromise;
-      if (httpMethod === 'get') {
-        axiosPromise = axios.get(`${this.apiURL}${relativeURL}`, { headers });
-      } else {
-        axiosPromise = axios[httpMethod](`${this.apiURL}${relativeURL}`, data, { headers });
-      }
-
-      axiosPromise
+      const axiosConfig = { url: `${this.apiURL}${relativeURL}`, headers, ...config };
+      axios(axiosConfig)
         .then((res) => { resolve(res.data); })
         .catch((error) => {
           if (error.response && error.response.data) {
             reject(new Error(error.response.data.message));
+          } else if (!axios.isCancel(error)) {
+            reject(new Error('An unexpected error occurred'));
           }
-
-          reject(new Error('An unexpected error occurred'));
         });
     });
   }
@@ -130,7 +133,7 @@ class AuthService {
 
     const headers = this.getAuthHeader();
 
-    return axios.post(`${this.apiURL}logout`, {}, { headers })
+    return axios.post(`${this.apiURL}/logout`, {}, { headers })
       .then(() => {
         this.removeToken();
         return true;
