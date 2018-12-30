@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
 import { PropTypes } from 'prop-types';
 
-import AuthService from './AuthService';
-import Spinner from './Spinner';
+import AuthService from '../utils/AuthService';
+import Spinner from './common/Spinner';
 
 
 class Logout extends Component {

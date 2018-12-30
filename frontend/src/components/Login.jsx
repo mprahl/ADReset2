@@ -7,9 +7,9 @@ import Lock from '@material-ui/icons/Lock';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import 'react-toastify/dist/ReactToastify.css';
 
-import AuthService from './AuthService';
+import AuthService from '../utils/AuthService';
 import './Login.css';
-import windowsLogo from './windows.png';
+import windowsLogo from '../imgs/windows.png';
 
 
 class Login extends Component {

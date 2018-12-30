@@ -5,13 +5,13 @@ import {
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import Navigation from './components/Navigation';
+import Navigation from './components/common/Navigation';
 import Home from './components/Home';
 import Login from './components/Login';
 import Logout from './components/Logout';
-import SetQuestion from './components/SetQuestion';
+import SetQuestion from './components/admin/SetQuestion';
 
-import AuthService from './components/AuthService';
+import AuthService from './utils/AuthService';
 import './App.css';
 
 

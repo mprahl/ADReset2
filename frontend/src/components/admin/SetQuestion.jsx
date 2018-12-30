@@ -4,10 +4,10 @@ import { PropTypes } from 'prop-types';
 import { Container, Table, Button } from 'reactstrap';
 
 import './SetQuestion.css';
-import APIService from './APIService';
-import Spinner from './Spinner';
-import EditableColumn from './EditableColumn';
-import TablePagination from './TablePagination';
+import APIService from '../../utils/APIService';
+import Spinner from '../common/Spinner';
+import EditableColumn from '../common/EditableColumn';
+import TablePagination from '../common/TablePagination';
 
 
 class SetQuestion extends Component {
