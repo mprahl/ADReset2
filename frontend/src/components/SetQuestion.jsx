@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { withRouter } from 'react-router-dom';
 import { PropTypes } from 'prop-types';
 import { Container, Table, Button } from 'reactstrap';
 
@@ -12,7 +13,6 @@ import TablePagination from './TablePagination';
 class SetQuestion extends Component {
   static propTypes = {
     displayToast: PropTypes.func.isRequired,
-    history: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
   }
 
@@ -221,8 +221,6 @@ class SetQuestion extends Component {
         <TablePagination
           page={this.state.page}
           pages={this.state.pages}
-          history={this.props.history}
-          match={this.props.match}
         />
       </Container>
     );
@@ -230,4 +228,4 @@ class SetQuestion extends Component {
 }
 
 
-export default SetQuestion;
+export default withRouter(SetQuestion);

@@ -89,12 +89,11 @@ class App extends Component {
             <Route
               exact
               path="/login"
-              component={props => (
+              component={() => (
                 <Login
                   loggedIn={this.state.loggedIn}
                   setLoggedIn={this.setLoggedIn}
                   displayToast={this.displayToast}
-                  {...props}
                 />)}
             />
             <Route
@@ -119,9 +118,7 @@ class App extends Component {
               exact
               path="/configure-questions/:page"
               accessRole="admin"
-              component={
-                props => <SetQuestion displayToast={this.displayToast} {...props} />
-              }
+              component={() => <SetQuestion displayToast={this.displayToast} />}
             />
           </Switch>
           <ToastContainer hideProgressBar={false} />

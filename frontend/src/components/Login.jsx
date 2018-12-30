@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Redirect } from 'react-router-dom';
+import { Redirect, withRouter } from 'react-router-dom';
 import { PropTypes } from 'prop-types';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 import Person from '@material-ui/icons/Person';
@@ -109,4 +109,4 @@ class Login extends Component {
   }
 }
 
-export default Login;
+export default withRouter(Login);
