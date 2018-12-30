@@ -47,7 +47,9 @@ class App extends Component {
       return (
         <Route
           {...rest}
-          render={props => <Redirect to={{ pathname: '/login', state: { from: props.location } }} />}
+          render={props => (
+            <Redirect to={{ pathname: '/login', state: { from: props.location } }} />
+          )}
         />
       );
     }
@@ -87,11 +89,12 @@ class App extends Component {
             <Route
               exact
               path="/login"
-              component={() => (
+              component={props => (
                 <Login
                   loggedIn={this.state.loggedIn}
                   setLoggedIn={this.setLoggedIn}
                   displayToast={this.displayToast}
+                  {...props}
                 />)}
             />
             <Route

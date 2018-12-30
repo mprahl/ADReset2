@@ -17,6 +17,7 @@ class Login extends Component {
     loggedIn: PropTypes.bool.isRequired,
     setLoggedIn: PropTypes.func.isRequired,
     displayToast: PropTypes.func.isRequired,
+    location: PropTypes.object.isRequired,
   }
 
   constructor(props) {
@@ -52,9 +53,10 @@ class Login extends Component {
   }
 
   render() {
+    const { from } = this.props.location.state || { from: { pathname: '/' } };
     if (this.props.loggedIn === true) {
       return (
-        <Redirect to="/" />
+        <Redirect to={from} />
       );
     }
 
