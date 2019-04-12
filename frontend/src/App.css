@@ -1,14 +1,14 @@
 .Toastify__toast-body {
-    padding-right: 5px;
-    padding-left: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
 }
 
 button[disabled] {
-    cursor: not-allowed;
+  cursor: not-allowed;
 }
 
 .thead-blue > tr > th {
-    background-color: #2C3E50 !important;
-    color: rgb(255, 255, 255, .95) !important;
-    border-color: rgb(32, 34, 37);
+  background-color: #2c3e50 !important;
+  color: rgb(255, 255, 255, 0.95) !important;
+  border-color: rgb(32, 34, 37);
 }

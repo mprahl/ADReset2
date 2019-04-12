@@ -9,12 +9,11 @@ import Spinner from '../common/Spinner';
 import EditableColumn from '../common/EditableColumn';
 import TablePagination from '../common/TablePagination';
 
-
 class SetQuestion extends Component {
   static propTypes = {
     displayToast: PropTypes.func.isRequired,
     match: PropTypes.object.isRequired,
-  }
+  };
 
   constructor(props) {
     super(props);
@@ -57,15 +56,16 @@ class SetQuestion extends Component {
   getQuestions() {
     this.setState({ loading: true });
     const page = parseInt(this.props.match.params.page, 10);
-    this.apiService.getSecretQuestions(page)
-      .then((data) => {
+    this.apiService
+      .getSecretQuestions(page)
+      .then(data => {
         this.setState({
           loading: false,
           questions: data.items,
           pages: data.meta.pages,
         });
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
       });
   }
@@ -82,19 +82,26 @@ class SetQuestion extends Component {
   setEnabled(event) {
     const btn = event.target;
     btn.disabled = true;
-    const questionID = parseInt(event.target.parentElement.parentElement.attributes['data-id'].value, 10);
+    const questionID = parseInt(
+      event.target.parentElement.parentElement.attributes['data-id'].value,
+      10,
+    );
 
     const enabled = !this.state.questions[this.getQuestionIndex(questionID)].enabled;
 
-    this.apiService.patchSecretQuestion(questionID, { enabled })
-      .then((data) => {
+    this.apiService
+      .patchSecretQuestion(questionID, { enabled })
+      .then(data => {
         const { questions } = this.state;
         questions[this.getQuestionIndex(questionID)].enabled = data.enabled;
         this.setState({ questions });
-        this.props.displayToast('success', `The question was ${data.enabled ? 'enabled' : 'disabled'}`);
+        this.props.displayToast(
+          'success',
+          `The question was ${data.enabled ? 'enabled' : 'disabled'}`,
+        );
         btn.disabled = false;
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
         btn.disabled = false;
       });
@@ -114,19 +121,25 @@ class SetQuestion extends Component {
 
   addSecretQuestion(event) {
     if (this.state.newSecretQuestion === '') {
-      this.props.displayToast('error', 'You must enter a value before trying to add a secret question');
+      this.props.displayToast(
+        'error',
+        'You must enter a value before trying to add a secret question',
+      );
       return;
     }
 
-    const addQuestionInput = event.target.parentElement.parentElement.querySelector('input.add-question-input');
+    const addQuestionInput = event.target.parentElement.parentElement.querySelector(
+      'input.add-question-input',
+    );
     addQuestionInput.disabled = true;
-    this.apiService.addSecretQuestion(this.state.newSecretQuestion)
+    this.apiService
+      .addSecretQuestion(this.state.newSecretQuestion)
       .then(() => {
         this.setState({ newSecretQuestion: '' });
         this.getQuestions();
         addQuestionInput.disabled = false;
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
         addQuestionInput.disabled = false;
       });
@@ -135,7 +148,9 @@ class SetQuestion extends Component {
   // eslint-disable-next-line class-methods-use-this
   handleNewQuestionEnter(event) {
     if (event.keyCode === 13) {
-      const addBtn = event.target.parentElement.parentElement.querySelector('button.add-question-btn');
+      const addBtn = event.target.parentElement.parentElement.querySelector(
+        'button.add-question-btn',
+      );
       addBtn.click();
     }
   }
@@ -146,38 +161,32 @@ class SetQuestion extends Component {
 
   render() {
     if (this.state.loading === true) {
-      return (
-        <Spinner />
-      );
+      return <Spinner />;
     }
 
     const questions = this.state.questions.map(v => (
       <tr key={v.id} data-id={v.id}>
-        {
-          this.state.questionEditID === v.id
-            ? (
-              <EditableColumn
-                displayToast={this.props.displayToast}
-                id={v.id}
-                column="question"
-                value={v.question}
-                update={this.questionUpdate}
-                done={this.doneEditing}
-              />
-            )
-            : (
-              <td>
-                <Button
-                  onClick={() => {
-                    this.setState({ questionEditID: v.id });
-                  }}
-                  color="link"
-                >
-                  {v.question}
-                </Button>
-              </td>
-            )
-        }
+        {this.state.questionEditID === v.id ? (
+          <EditableColumn
+            displayToast={this.props.displayToast}
+            id={v.id}
+            column="question"
+            value={v.question}
+            update={this.questionUpdate}
+            done={this.doneEditing}
+          />
+        ) : (
+          <td>
+            <Button
+              onClick={() => {
+                this.setState({ questionEditID: v.id });
+              }}
+              color="link"
+            >
+              {v.question}
+            </Button>
+          </td>
+        )}
         <td>
           <Button onClick={this.setEnabled} color="link">
             {v.enabled ? 'Disable' : 'Enable'}
@@ -186,7 +195,7 @@ class SetQuestion extends Component {
       </tr>
     ));
 
-    questions.push((
+    questions.push(
       <tr key="add">
         <td>
           <input
@@ -199,10 +208,12 @@ class SetQuestion extends Component {
           />
         </td>
         <td>
-          <Button onClick={this.addSecretQuestion} className="add-question-btn" color="link">Add</Button>
+          <Button onClick={this.addSecretQuestion} className="add-question-btn" color="link">
+            Add
+          </Button>
         </td>
-      </tr>
-    ));
+      </tr>,
+    );
 
     return (
       <Container>
@@ -214,18 +225,12 @@ class SetQuestion extends Component {
               <th>Action</th>
             </tr>
           </thead>
-          <tbody>
-            {questions}
-          </tbody>
+          <tbody>{questions}</tbody>
         </Table>
-        <TablePagination
-          page={this.state.page}
-          pages={this.state.pages}
-        />
+        <TablePagination page={this.state.page} pages={this.state.pages} />
       </Container>
     );
   }
 }
-
 
 export default withRouter(SetQuestion);

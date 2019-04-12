@@ -2,7 +2,6 @@
 import decode from 'jwt-decode';
 import axios from 'axios';
 
-
 // TODO: Add a check that runs every x minutes to determine if the token is expired
 class AuthService {
   constructor(apiURL) {
@@ -22,8 +21,9 @@ class AuthService {
   login(username, password) {
     const data = { username, password };
     const unexpectedMsg = 'An unexpected error occurred';
-    return axios.post(`${this.apiURL}/login`, data)
-      .then((res) => {
+    return axios
+      .post(`${this.apiURL}/login`, data)
+      .then(res => {
         if (res.data && res.data.token) {
           localStorage.setItem('token', res.data.token);
           return;
@@ -31,7 +31,7 @@ class AuthService {
 
         throw new Error(unexpectedMsg);
       })
-      .catch((error) => {
+      .catch(error => {
         if (error.response) {
           throw new Error(error.response.data.message);
         }
@@ -112,8 +112,10 @@ class AuthService {
       const headers = this.getAuthHeader();
       const axiosConfig = { url: `${this.apiURL}${relativeURL}`, headers, ...config };
       axios(axiosConfig)
-        .then((res) => { resolve(res.data); })
-        .catch((error) => {
+        .then(res => {
+          resolve(res.data);
+        })
+        .catch(error => {
           if (error.response && error.response.data) {
             reject(new Error(error.response.data.message));
           } else if (!axios.isCancel(error)) {
@@ -128,17 +130,20 @@ class AuthService {
       // If the user isn't logged in, then the logout route can't be called, so just remove the
       // token
       this.removeToken();
-      return new Promise((resolve) => { resolve(); });
+      return new Promise(resolve => {
+        resolve();
+      });
     }
 
     const headers = this.getAuthHeader();
 
-    return axios.post(`${this.apiURL}/logout`, {}, { headers })
+    return axios
+      .post(`${this.apiURL}/logout`, {}, { headers })
       .then(() => {
         this.removeToken();
         return true;
       })
-      .catch((error) => {
+      .catch(error => {
         if (error.response) {
           // If the token is expired, then just remove the token from storage
           if (error.response.status === 401) {
@@ -153,6 +158,5 @@ class AuthService {
       });
   }
 }
-
 
 export default AuthService;

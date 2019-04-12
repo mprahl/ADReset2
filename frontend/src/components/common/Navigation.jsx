@@ -2,7 +2,14 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { PropTypes } from 'prop-types';
 import {
-  Container, Collapse, Navbar, NavbarToggler, NavbarBrand, Nav, NavItem, NavLink,
+  Container,
+  Collapse,
+  Navbar,
+  NavbarToggler,
+  NavbarBrand,
+  Nav,
+  NavItem,
+  NavLink,
 } from 'reactstrap';
 
 import './Navigation.css';
@@ -11,7 +18,7 @@ import logo from '../../imgs/logo.png';
 class Navigation extends Component {
   static propTypes = {
     loggedIn: PropTypes.bool.isRequired,
-  }
+  };
 
   constructor(props) {
     super(props);
@@ -30,9 +37,15 @@ class Navigation extends Component {
   }
 
   render() {
-    const loginStateLink = this.props.loggedIn
-      ? <NavLink tag={Link} to="/logout">Logout</NavLink>
-      : <NavLink tag={Link} to="/login">Login</NavLink>;
+    const loginStateLink = this.props.loggedIn ? (
+      <NavLink tag={Link} to="/logout">
+        Logout
+      </NavLink>
+    ) : (
+      <NavLink tag={Link} to="/login">
+        Login
+      </NavLink>
+    );
 
     return (
       <Navbar dark expand="sm">
@@ -43,9 +56,7 @@ class Navigation extends Component {
           <NavbarToggler onClick={this.toggle} />
           <Collapse isOpen={this.state.isOpen} navbar>
             <Nav className="ml-auto" navbar>
-              <NavItem>
-                {loginStateLink}
-              </NavItem>
+              <NavItem>{loginStateLink}</NavItem>
               <NavItem>
                 <NavLink href="#">Placeholder</NavLink>
               </NavItem>

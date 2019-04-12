@@ -11,14 +11,13 @@ import AuthService from '../utils/AuthService';
 import './Login.css';
 import windowsLogo from '../imgs/windows.png';
 
-
 class Login extends Component {
   static propTypes = {
     loggedIn: PropTypes.bool.isRequired,
     setLoggedIn: PropTypes.func.isRequired,
     displayToast: PropTypes.func.isRequired,
     location: PropTypes.object.isRequired,
-  }
+  };
 
   constructor(props) {
     super(props);
@@ -38,11 +37,12 @@ class Login extends Component {
     e.preventDefault();
     this.setState({ loading: true });
 
-    this.authService.login(this.state.username, this.state.password)
+    this.authService
+      .login(this.state.username, this.state.password)
       .then(() => {
         this.props.setLoggedIn(true);
       })
-      .catch((error) => {
+      .catch(error => {
         this.setState({ password: '', loading: false });
         this.props.displayToast('error', error.message);
       });
@@ -55,9 +55,7 @@ class Login extends Component {
   render() {
     const { from } = this.props.location.state || { from: { pathname: '/' } };
     if (this.props.loggedIn === true) {
-      return (
-        <Redirect to={from} />
-      );
+      return <Redirect to={from} />;
     }
 
     return (
@@ -93,11 +91,11 @@ class Login extends Component {
               </div>
               <div className="form-group">
                 <button disabled={this.state.loading} className="btn login-btn" type="submit">
-                  {
-                    this.state.loading
-                      ? <CircularProgress className="btn-icon" size="20px" />
-                      : <ExitToApp className="btn-icon" />
-                  }
+                  {this.state.loading ? (
+                    <CircularProgress className="btn-icon" size="20px" />
+                  ) : (
+                    <ExitToApp className="btn-icon" />
+                  )}
                   Login
                 </button>
               </div>

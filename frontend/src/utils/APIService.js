@@ -2,7 +2,6 @@ import axios from 'axios';
 
 import AuthService from './AuthService';
 
-
 class APIService {
   constructor(apiURL) {
     this.authService = new AuthService(apiURL);
@@ -37,6 +36,5 @@ class APIService {
     return this.authService.authenticatedAPICall(`/questions/${questionID}`, axiosConfig, 'admin');
   }
 }
-
 
 export default APIService;

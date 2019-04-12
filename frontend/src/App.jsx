@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import {
-  BrowserRouter, Route, Switch, Redirect,
-} from 'react-router-dom';
+// eslint-disable-next-line object-curly-newline
+import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,7 +12,6 @@ import SetQuestion from './components/admin/SetQuestion';
 
 import AuthService from './utils/AuthService';
 import './App.css';
-
 
 class App extends Component {
   constructor(props) {
@@ -63,16 +61,11 @@ class App extends Component {
       authorized = false;
     }
 
-    return (
-      <Route
-        {...rest}
-        render={props => (authorized ? (
-          <ComponentToRender {...props} />
-        ) : (
-          <Redirect to={{ pathname: '/' }} />
-        ))}
-      />
-    );
+    if (authorized) {
+      return <Route {...rest} render={props => <ComponentToRender {...props} />} />;
+    }
+
+    return <Route {...rest} render={() => <Redirect to={{ pathname: '/' }} />} />;
   }
 
   render() {
@@ -81,11 +74,7 @@ class App extends Component {
         <React.Fragment>
           <Navigation loggedIn={this.state.loggedIn} role={this.state.role} />
           <Switch>
-            <Route
-              exact
-              path="/"
-              component={Home}
-            />
+            <Route exact path="/" component={Home} />
             <Route
               exact
               path="/login"
@@ -94,7 +83,8 @@ class App extends Component {
                   loggedIn={this.state.loggedIn}
                   setLoggedIn={this.setLoggedIn}
                   displayToast={this.displayToast}
-                />)}
+                />
+              )}
             />
             <Route
               exact
@@ -104,15 +94,14 @@ class App extends Component {
                   loggedIn={this.state.loggedIn}
                   setLoggedIn={this.setLoggedIn}
                   displayToast={this.displayToast}
-                />)}
+                />
+              )}
             />
             <this.ProtectedRoute
               exact
               path="/configure-questions"
               accessRole="admin"
-              component={
-                () => <Redirect to={{ pathname: '/configure-questions/1' }} />
-              }
+              component={() => <Redirect to={{ pathname: '/configure-questions/1' }} />}
             />
             <this.ProtectedRoute
               exact

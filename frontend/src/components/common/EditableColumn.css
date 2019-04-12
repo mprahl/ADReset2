@@ -1,20 +1,20 @@
 .editable-input {
-    max-width: 500px;
-    display: inline-block;
+  max-width: 500px;
+  display: inline-block;
 }
 
 .btn-link {
-    padding: 0;
+  padding: 0;
 }
 
 .edit-btn {
-    margin-left: 0.5rem;
+  margin-left: 0.5rem;
 }
 
 .editable-btn {
-    margin-right: 0.25rem;
+  margin-right: 0.25rem;
 }
 
 .editable-btn svg {
-    font-size: 175%;
+  font-size: 175%;
 }

@@ -6,7 +6,6 @@ import Cancel from '@material-ui/icons/Cancel';
 
 import './EditableColumn.css';
 
-
 class EditableColumn extends Component {
   static propTypes = {
     displayToast: PropTypes.func.isRequired,
@@ -15,7 +14,7 @@ class EditableColumn extends Component {
     value: PropTypes.string.isRequired,
     update: PropTypes.func.isRequired,
     done: PropTypes.func.isRequired,
-  }
+  };
 
   constructor(props) {
     super(props);
@@ -36,12 +35,13 @@ class EditableColumn extends Component {
       return;
     }
 
-    this.props.update(id, { question: this.state.value })
-      .then((data) => {
+    this.props
+      .update(id, { question: this.state.value })
+      .then(data => {
         this.props.displayToast('success', `The ${this.props.column} was updated`);
         this.props.done(this.props.id, this.props.column, data[this.props.column]);
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
         this.setState({ loading: false });
       });
@@ -84,7 +84,9 @@ class EditableColumn extends Component {
           <CheckCircle />
         </Button>
         <Button
-          onClick={() => { this.props.done(); }}
+          onClick={() => {
+            this.props.done();
+          }}
           color="link"
           className="editable-btn cancel-btn"
           disabled={this.state.loading}
@@ -95,6 +97,5 @@ class EditableColumn extends Component {
     );
   }
 }
-
 
 export default EditableColumn;

@@ -5,13 +5,12 @@ import { PropTypes } from 'prop-types';
 import AuthService from '../utils/AuthService';
 import Spinner from './common/Spinner';
 
-
 class Logout extends Component {
   static propTypes = {
     loggedIn: PropTypes.bool.isRequired,
     setLoggedIn: PropTypes.func.isRequired,
     displayToast: PropTypes.func.isRequired,
-  }
+  };
 
   constructor(props) {
     super(props);
@@ -21,12 +20,13 @@ class Logout extends Component {
   }
 
   logout() {
-    this.authService.logout()
+    this.authService
+      .logout()
       .then(() => {
         this.props.setLoggedIn(false);
         this.props.displayToast('info', 'You were logged out successfully');
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
       });
   }
@@ -36,9 +36,7 @@ class Logout extends Component {
       this.logout();
       return <Spinner />;
     }
-    return (
-      <Redirect to="/login" />
-    );
+    return <Redirect to="/login" />;
   }
 }
 
