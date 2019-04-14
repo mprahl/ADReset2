@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from functools import wraps
+import copy
 
 from flask import jsonify, request, url_for
 from werkzeug.exceptions import Forbidden
@@ -47,6 +48,18 @@ def paginate(func):
         # Paginate the returned query
         p = query.paginate(page, per_page)
 
+        request_args_wo_page = dict(copy.deepcopy(request.args))
+        # Remove pagination related args because those are handled elsewhere
+        # Also, remove any args that url_for accepts in case the user entered those in
+        for key in ('page', 'per_page', 'endpoint'):
+            if key in request_args_wo_page:
+                del request_args_wo_page[key]
+        for key in request_args_wo_page.keys():
+            if key.startswith('_'):
+                del request_args_wo_page[key]
+        # Merge kwargs since it will contain the Flask URL parameters
+        request_args_wo_page.update(kwargs)
+
         # Generate the pagination metadata
         pages = {
             'next': None,
@@ -58,16 +71,19 @@ def paginate(func):
         }
         if p.has_prev:
             pages['previous'] = url_for(
-                request.endpoint, page=p.prev_num, per_page=per_page, _external=True, **kwargs)
+                request.endpoint, page=p.prev_num, per_page=per_page, _external=True,
+                **request_args_wo_page)
 
         if p.has_next:
             pages['next'] = url_for(
-                request.endpoint, page=p.next_num, per_page=per_page, _external=True, **kwargs)
+                request.endpoint, page=p.next_num, per_page=per_page, _external=True,
+                **request_args_wo_page)
 
         pages['first'] = url_for(
-            request.endpoint, page=1, per_page=per_page, _external=True, **kwargs)
+            request.endpoint, page=1, per_page=per_page, _external=True, **request_args_wo_page)
         pages['last'] = url_for(
-            request.endpoint, page=p.pages, per_page=per_page, _external=True, **kwargs)
+            request.endpoint, page=p.pages, per_page=per_page, _external=True,
+            **request_args_wo_page)
 
         return jsonify({
             'items': [item.to_json() for item in p.items],
