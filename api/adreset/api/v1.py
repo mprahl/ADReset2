@@ -49,6 +49,25 @@ def _validate_api_input(json_req, key, expected_type):
         raise ValidationError('The parameter "{0}" must be a {1}'.format(key, type_name))
 
 
+def _str_to_bool(candidate):
+    """
+    Parse the string to convert it to a boolean if possible.
+
+    :param str candidate: the string to parse
+    :return: a parsed boolean or None if it can't be parsed
+    :rtype: bool/None
+    """
+    if not candidate:
+        return None
+
+    if candidate.lower() in ('1', 'true'):
+        return True
+    elif candidate.lower() in ('0', 'false'):
+        return False
+    else:
+        return None
+
+
 @api_v1.route('/about')
 def about():
     """
@@ -117,7 +136,11 @@ def get_questions():
 
     :rtype: flask.Response
     """
-    return Question.query
+    query = Question.query
+    enabled = _str_to_bool(request.args.get('enabled'))
+    if enabled is not None:
+        query = query.filter_by(enabled=enabled)
+    return query
 
 
 @api_v1.route('/questions/<int:question_id>')

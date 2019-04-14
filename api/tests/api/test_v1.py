@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 
 import flask_jwt_extended
+import pytest
 
 from adreset import version
 from adreset.models import User, Question, Answer, FailedAttempt, db
@@ -157,42 +158,64 @@ def test_patch_question(client, logged_in_headers, admin_logged_in_headers):
     }
 
 
-def test_get_questions(client):
+@pytest.mark.parametrize('enabled', (True, False, None))
+def test_get_questions(enabled, client):
     """Test the /api/v1/questions route."""
-    rv = client.get('/api/v1/questions', headers={'Content-Type': 'application/json'})
-    items = [
-        {
-            'enabled': True,
-            'id': 1,
-            'question': 'What is your favorite flavor of ice cream?',
-            'url': 'http://localhost/api/v1/questions/1'
-        },
-        {
-            'enabled': True,
-            'id': 2,
-            'question': 'What is your favorite color?',
-            'url': 'http://localhost/api/v1/questions/2'
-        },
-        {
-            'enabled': True,
-            'id': 3,
-            'question': 'What is your favorite toy?',
-            'url': 'http://localhost/api/v1/questions/3'
-        }
-    ]
+    question = Question(question='What is your favorite type of pizza?', enabled=False)
+    db.session.add(question)
+    db.session.commit()
+
+    url = '/api/v1/questions'
+    if enabled is True:
+        url += '?enabled=true'
+    elif enabled is False:
+        url += '?enabled=false'
+
+    items = []
+    if enabled in (None, True):
+        items += [
+            {
+                'enabled': True,
+                'id': 1,
+                'question': 'What is your favorite flavor of ice cream?',
+                'url': 'http://localhost/api/v1/questions/1'
+            },
+            {
+                'enabled': True,
+                'id': 2,
+                'question': 'What is your favorite color?',
+                'url': 'http://localhost/api/v1/questions/2'
+            },
+            {
+                'enabled': True,
+                'id': 3,
+                'question': 'What is your favorite toy?',
+                'url': 'http://localhost/api/v1/questions/3'
+            }
+        ]
+
+    if enabled in (None, False):
+        items += [
+            {
+                'enabled': False,
+                'id': 4,
+                'question': 'What is your favorite type of pizza?',
+                'url': 'http://localhost/api/v1/questions/4'
+            }
+        ]
+
+    rv = client.get(url, headers={'Content-Type': 'application/json'})
     data = json.loads(rv.data.decode('utf-8'))
     assert data['items'] == items
     # Order of the query arguments can vary
-    assert data['meta']['first'] in ('http://localhost/api/v1/questions?page=1&per_page=10',
-                                     'http://localhost/api/v1/questions?per_page=10&page=1')
-    assert data['meta']['last'] in ('http://localhost/api/v1/questions?page=1&per_page=10',
-                                    'http://localhost/api/v1/questions?per_page=10&page=1')
+    assert data['meta']['first']
+    assert data['meta']['last']
     assert data['meta']['next'] is None
     assert data['meta']['page'] == 1
     assert data['meta']['pages'] == 1
     assert data['meta']['per_page'] == 10
     assert data['meta']['previous'] is None
-    assert data['meta']['total'] == 3
+    assert data['meta']['total'] == len(items)
 
 
 def test_get_question(client):
