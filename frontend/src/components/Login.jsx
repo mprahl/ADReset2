@@ -6,6 +6,8 @@ import Person from '@material-ui/icons/Person';
 import Lock from '@material-ui/icons/Lock';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import 'react-toastify/dist/ReactToastify.css';
+// eslint-disable-next-line object-curly-newline
+import { Button, Container, Form, FormGroup, Input } from 'reactstrap';
 
 import AuthService from '../utils/AuthService';
 import './Login.css';
@@ -59,50 +61,47 @@ class Login extends Component {
     }
 
     return (
-      <React.Fragment>
-        <div className="container">
-          <div className="login-form-wrapper">
-            <img className="login-logo" src={windowsLogo} alt="Microsoft Active Directory" />
-            <h6 className="form-header">Login with your Windows credentials</h6>
-            <form onSubmit={this.onSubmit} className="login-form">
-              <div className="form-group">
-                <Person className="input-icon" />
-                <input
-                  onChange={this.handleChange}
-                  value={this.state.username}
-                  className="form-control login-input"
-                  type="text"
-                  name="username"
-                  required
-                  placeholder="Username"
-                />
-              </div>
-              <div className="form-group">
-                <Lock className="input-icon" />
-                <input
-                  onChange={this.handleChange}
-                  value={this.state.password}
-                  className="form-control login-input"
-                  type="password"
-                  name="password"
-                  required
-                  placeholder="Password"
-                />
-              </div>
-              <div className="form-group">
-                <button disabled={this.state.loading} className="btn login-btn" type="submit">
-                  {this.state.loading ? (
-                    <CircularProgress className="btn-icon" size="20px" />
-                  ) : (
-                    <ExitToApp className="btn-icon" />
-                  )}
-                  Login
-                </button>
-              </div>
-            </form>
-          </div>
+      <Container>
+        <div className="login-form-wrapper">
+          <img className="login-logo" src={windowsLogo} alt="Microsoft Active Directory" />
+          <h6 className="form-header">Login with your Windows credentials</h6>
+          <Form onSubmit={this.onSubmit} className="login-form">
+            <FormGroup>
+              <Person className="input-icon" />
+              <Input
+                onChange={this.handleChange}
+                value={this.state.username}
+                className="login-input"
+                name="username"
+                required
+                placeholder="Username"
+              />
+            </FormGroup>
+            <FormGroup>
+              <Lock className="input-icon" />
+              <Input
+                onChange={this.handleChange}
+                value={this.state.password}
+                className="login-input"
+                type="password"
+                name="password"
+                required
+                placeholder="Password"
+              />
+            </FormGroup>
+            <FormGroup>
+              <Button disabled={this.state.loading} className="login-btn">
+                {this.state.loading ? (
+                  <CircularProgress className="btn-icon" size="20px" />
+                ) : (
+                  <ExitToApp className="btn-icon" />
+                )}
+                Login
+              </Button>
+            </FormGroup>
+          </Form>
         </div>
-      </React.Fragment>
+      </Container>
     );
   }
 }

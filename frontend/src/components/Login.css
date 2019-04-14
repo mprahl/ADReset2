@@ -44,6 +44,7 @@
   color: #dfe1e2;
   margin-top: 15px;
   background-color: #00a1f1;
+  border: none;
 }
 
 .login-btn:not([disabled]):hover {
