@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from datetime import datetime
+import copy
 
 from flask import Blueprint, jsonify, request, current_app
 from werkzeug.exceptions import NotFound, Unauthorized
@@ -278,57 +279,106 @@ def delete_answers():
 
 @api_v1.route('/answers', methods=['POST'])
 @user_required
-def add_answer():
+def add_answers():
     """
-    Add a user's secret answer tied to an administrator approved question.
+    Add a user's secret answers tied to administrator approved questions.
 
     :rtype: flask.Response
     """
-    req_json = request.get_json(force=True)
-    _validate_api_input(req_json, 'answer', string_types)
-    _validate_api_input(req_json, 'question_id', int)
-    if len(req_json['answer']) < current_app.config['ANSWERS_MINIMUM_LENGTH']:
-        raise ValidationError('The answer must be at least {0} characters long'.format(
-            current_app.config['ANSWERS_MINIMUM_LENGTH']))
-
     user_ad_guid = get_jwt_identity()['guid']
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
+    username = User.get_ad_username_from_id(user_id)
     # Make sure the user hasn't already set the required amount of secret answers
-    num_answers = (db.session.query(func.count(Answer.answer))).filter_by(user_id=user_id).scalar()
-    if num_answers >= current_app.config['REQUIRED_ANSWERS']:
-        raise ValidationError('You\'ve already set the required amount of secret answers')
+    num_answers_in_db = \
+        (db.session.query(func.count(Answer.answer))).filter_by(user_id=user_id).scalar()
+    if num_answers_in_db != 0:
+        log.debug({
+            'message': 'The user attempted to set their secret answers but had them already set',
+            'user': username,
+        })
+        raise ValidationError(
+            'You\'ve previously set your secret answers. Please reset them to set them again.')
 
-    # Make sure the supplied question_id maps to a real and enabled question in the database
-    question = Question.query.get(req_json['question_id'])
-    if not question:
-        raise ValidationError('The "question_id" is invalid')
-    elif question.enabled is False:
-        raise ValidationError('The "question_id" is to a disabled question')
+    req_json = copy.deepcopy(request.get_json(force=True))
+    if not isinstance(req_json, list):
+        log.debug({'message': 'The user did not supply an array', 'user': username})
+        raise ValidationError('The input must be an array')
 
-    # Make sure the question hasn't already been answered by the user
-    answered = bool((db.session.query(func.count(Answer.answer))).filter_by(
-        question_id=req_json['question_id'], user_id=user_id).scalar())
-    if answered:
-        raise ValidationError('That question has already been used by you')
+    num_answers = len(req_json)
+    # Verify that the user supplied the required amount of answers
+    if num_answers != current_app.config['REQUIRED_ANSWERS']:
+        log.info({'message': 'The user supplied an invalid amount of answers', 'user': username})
+        if num_answers == 1:
+            error_prefix = '1 answer was'
+        else:
+            error_prefix = '{0} answers were'.format(num_answers)
+        raise ValidationError('{0} supplied but {1} are required'.format(
+            error_prefix,
+            current_app.config['REQUIRED_ANSWERS']
+        ))
 
-    if current_app.config['CASE_SENSITIVE_ANSWERS']:
-        answer = req_json['answer']
-    else:
-        answer = req_json['answer'].lower()
+    question_ids = set()
+    answer_strings = set()
+    for answer in req_json:
+        _validate_api_input(answer, 'answer', string_types)
+        _validate_api_input(answer, 'question_id', int)
+        # Verify the answers meet the length requirements
+        if len(answer['answer']) < current_app.config['ANSWERS_MINIMUM_LENGTH']:
+            log.info({
+                'message': 'The user supplied an answer of length {0}, but {1} is required'.format(
+                    len(answer['answer']),
+                    current_app.config['ANSWERS_MINIMUM_LENGTH']
+                ),
+                'user': username,
+            })
+            raise ValidationError('The answer must be at least {0} characters long'.format(
+                current_app.config['ANSWERS_MINIMUM_LENGTH']))
 
-    if current_app.config['ALLOW_DUPLICATE_ANSWERS'] is not True:
-        # Make sure the supplied answer hasn't already been used by that user
-        results = db.session.query(Answer.answer).filter_by(user_id=user_id).all()
-        for result in results:
-            if Answer.verify_answer(answer, result[0]):
-                raise ValidationError(
-                    'The supplied answer has already been used for another question')
+        # If answers aren't stored as case-sensitive, then convert it to lowercase
+        if current_app.config['CASE_SENSITIVE_ANSWERS'] is False:
+            log.debug({'message': 'Setting the answer to lowercase', 'user': username})
+            answer['answer'] = answer['answer'].lower()
 
-    hashed_answer = Answer.hash_answer(answer)
-    answer_obj = Answer(answer=hashed_answer, question_id=req_json['question_id'], user_id=user_id)
-    db.session.add(answer_obj)
+        # Make sure the supplied question_id maps to a real and enabled question in the database
+        question = Question.query.get(answer['question_id'])
+        if not question:
+            log.info({'message': 'The user supplied an invalid question', 'user': username})
+            raise ValidationError('The "question_id" is invalid')
+        elif question.enabled is False:
+            log.info({'message': 'The user tried to use a disabled question', 'user': username})
+            raise ValidationError(
+                'The "question_id" of {0} is to a disabled question'.format(question.id))
+
+        # Store these in sets to check duplicates
+        question_ids.add(answer['question_id'])
+        answer_strings.add(answer['answer'])
+
+    # Make sure the user doesn't try to reuse the same question
+    if len(question_ids) != num_answers:
+        log.info({'message': 'The user supplied duplicate questions', 'user': username})
+        raise ValidationError(
+            'One or more questions were the same. Please provide unique questions.')
+
+    # If duplicate answers aren't allowed, then verify the answers are unique
+    allow_dup_answers = current_app.config['ALLOW_DUPLICATE_ANSWERS']
+    if allow_dup_answers is False and num_answers != len(answer_strings):
+        log.info({'message': 'The user supplied duplicate answers', 'user': username})
+        raise ValidationError('One or more answers were the same. Please provide unique answers.')
+
+    # Now that the input is validated, add the entries to the database
+    answer_objects = []
+    for answer in req_json:
+        hashed_answer = Answer.hash_answer(answer['answer'])
+        answer_obj = Answer(
+            answer=hashed_answer, question_id=answer['question_id'], user_id=user_id)
+        db.session.add(answer_obj)
+        answer_objects.append(answer_obj)
     db.session.commit()
-    return jsonify(answer_obj.to_json()), 201
+
+    # This must be run after the session is committed because the ID needs to be set
+    answers_json = [answer.to_json() for answer in answer_objects]
+    log.info({'message': 'The user successfully set their secret answers', 'user': username})
+    return jsonify(answers_json), 201
 
 
 @api_v1.route('/reset/<username>', methods=['POST'])

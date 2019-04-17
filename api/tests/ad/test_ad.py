@@ -97,6 +97,12 @@ def test_get_guid(mock_ad):
     assert mock_ad.get_guid('testuser') == '5609c5ec-c0df-4480-a94b-b6eb0fc4c066'
 
 
+def test_get_sam_account_name(mock_ad):
+    """Test that the AD.get_sam_account_name returns a username."""
+    mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
+    assert mock_ad.get_sam_account_name('5609c5ec-c0df-4480-a94b-b6eb0fc4c066') == 'testuser'
+
+
 def test_get_loggedin_user(mock_ad):
     """Test that the AD.get_loggedin_user returns the logged in user."""
     mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')

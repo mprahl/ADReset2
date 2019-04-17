@@ -7,6 +7,7 @@ from datetime import datetime
 
 import flask_jwt_extended
 import pytest
+import mock
 
 from adreset import version
 from adreset.models import User, Question, Answer, FailedAttempt, db
@@ -228,19 +229,43 @@ def test_get_question(client):
     }
 
 
-def test_add_answer(client, logged_in_headers, admin_logged_in_headers):
+def test_add_answers(client, logged_in_headers, admin_logged_in_headers):
     """Test the answers POST route."""
-    data = json.dumps({
-        'question_id': 2,
-        'answer': 'bright pink'
-    })
+    data = json.dumps([
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+        {
+            'question_id': 2,
+            'answer': 'bright pink'
+        },
+    ])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
-    assert json.loads(rv.data.decode('utf-8')) == {
-        'id': 1,
-        'question_id': 2,
-        'url': 'http://localhost/api/v1/answers/1',
-        'user_id': 1
-    }
+    assert json.loads(rv.data.decode('utf-8')) == [
+        {
+            'id': 1,
+            'question_id': 3,
+            'url': 'http://localhost/api/v1/answers/1',
+            'user_id': 1,
+        },
+        {
+            'id': 2,
+            'question_id': 1,
+            'url': 'http://localhost/api/v1/answers/2',
+            'user_id': 1,
+        },
+        {
+            'id': 3,
+            'question_id': 2,
+            'url': 'http://localhost/api/v1/answers/3',
+            'user_id': 1,
+        },
+    ]
 
     rv = client.post('/api/v1/answers', headers=admin_logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
@@ -249,127 +274,207 @@ def test_add_answer(client, logged_in_headers, admin_logged_in_headers):
     }
 
 
-def test_add_answer_already_used_question(client, logged_in_headers):
-    """Test that the answers POST route errors when a question is reused."""
-    answer = Answer(answer=Answer.hash_answer('bright pink'), user_id=1, question_id=2)
-    db.session.add(answer)
-    db.session.commit()
-    data = json.dumps({
-        'question_id': 2,
-        'answer': 'cherry red'
-    })
+def test_add_answers_duplicate_question(client, logged_in_headers):
+    """Test that the answers POST route errors when a duplicate question is provided."""
+    data = json.dumps([
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 2,
+            'answer': 'cherry red'
+        },
+        {
+            'question_id': 2,
+            'answer': 'bright pink'
+        },
+    ])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': 'That question has already been used by you',
+        'message': 'One or more questions were the same. Please provide unique questions.',
         'status': 400
     }
 
 
-def test_add_answer_disabled_question(client, logged_in_headers):
+def test_add_answers_disabled_question(client, logged_in_headers):
     """Test that the answers POST route errors when a question is disabled."""
     question = Question.query.get(2)
     question.enabled = False
     db.session.add(question)
     db.session.commit()
-    data = json.dumps({
-        'question_id': 2,
-        'answer': 'cherry red'
-    })
+    data = json.dumps([
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+        {
+            'question_id': 2,
+            'answer': 'bright pink'
+        },
+    ])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': 'The "question_id" is to a disabled question',
+        'message': 'The "question_id" of 2 is to a disabled question',
         'status': 400
     }
 
 
-def test_add_answer_already_used_answer(app, client, logged_in_headers):
+def test_add_answers_duplicate_answer(app, client, logged_in_headers):
     """Test that the answers POST route errors when an answer is reused."""
-    app.config['ALLOW_DUPLICATE_ANSWERS'] = False
-    answer = Answer(answer=Answer.hash_answer('bright pink'), user_id=1, question_id=2)
-    db.session.add(answer)
-    db.session.commit()
-    data = json.dumps({
-        'question_id': 3,
-        'answer': 'bright pink'
-    })
-    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    data = json.dumps([
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+        {
+            'question_id': 2,
+            'answer': 'strawberry'
+        },
+    ])
+    with mock.patch.dict(app.config, {'ALLOW_DUPLICATE_ANSWERS': False}):
+        rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': 'The supplied answer has already been used for another question',
+        'message': 'One or more answers were the same. Please provide unique answers.',
         'status': 400
     }
 
 
-def test_add_answer_already_used_answer_conf_true(app, client, logged_in_headers):
-    """Test that the answers POST route allows an answer to be reused with config true."""
-    app.config['ALLOW_DUPLICATE_ANSWERS'] = True
-    answer = Answer(answer=Answer.hash_answer('bright pink'), user_id=1, question_id=2)
-    db.session.add(answer)
-    db.session.commit()
-    data = json.dumps({
-        'question_id': 3,
-        'answer': 'bright pink'
-    })
-    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
-    assert json.loads(rv.data.decode('utf-8')) == {
-        'id': 2,
-        'question_id': 3,
-        'url': 'http://localhost/api/v1/answers/2',
-        'user_id': 1
-    }
+def test_add_answers_duplicate_answer_conf_true(app, client, logged_in_headers):
+    """Test that the answers POST route allows an answer to be reused with the config as true."""
+    data = json.dumps([
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+        {
+            'question_id': 2,
+            'answer': 'bright pink'
+        },
+    ])
+    with mock.patch.dict(app.config, {'ALLOW_DUPLICATE_ANSWERS': True}):
+        rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert rv.status_code == 201
 
 
-def test_add_answer_past_limit(client, logged_in_headers):
+def test_add_answers_past_limit(client, logged_in_headers):
     """Test that the answers POST route doesn't allow a fourth answer for a user."""
-    answer = Answer(answer=Answer.hash_answer('strawberry'), user_id=1, question_id=1)
-    answer2 = Answer(answer=Answer.hash_answer('green'), user_id=1, question_id=2)
-    answer3 = Answer(answer=Answer.hash_answer('Buzz Lightyear'), user_id=1, question_id=3)
-    db.session.add(answer)
-    db.session.add(answer2)
-    db.session.add(answer3)
     # Add a fourth question so that a question doesn't have to be reused for the POST request
     question = Question(question='Where were you born?')
     db.session.add(question)
-    data = json.dumps({
-        'question_id': 4,
-        'answer': 'Boston, MA'
-    })
+    db.session.commit()
+    data = json.dumps([
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+        {
+            'question_id': 2,
+            'answer': 'bright pink'
+        },
+        {
+            'question_id': 4,
+            'answer': 'Boston, MA'
+        },
+    ])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': 'You\'ve already set the required amount of secret answers',
+        'message': '4 answers were supplied but 3 are required',
         'status': 400
     }
 
 
-def test_add_answer_case_insensitive(app, client, logged_in_headers):
+def test_add_answers_under_limit(client, logged_in_headers):
+    """Test that the answers POST route doesn't allow less than the required amount of answers."""
+    data = json.dumps([
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+    ])
+    rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'message': '1 answer was supplied but 3 are required',
+        'status': 400
+    }
+
+
+def test_add_answers_case_insensitive(app, client, logged_in_headers):
     """Test the answers POST route when case sensitive answers are disabled."""
-    app.config['CASE_SENSITIVE_ANSWERS'] = False
-    data = json.dumps({
-        'question_id': 2,
-        'answer': 'Bright Green'
-    })
-    client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    data = json.dumps([
+        {
+            'question_id': 2,
+            'answer': 'Bright Green'
+        },
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+    ])
+    with mock.patch.dict(app.config, {'CASE_SENSITIVE_ANSWERS': False}):
+        client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert Answer.verify_answer('bright green', Answer.query.get(1).answer) is True
     assert Answer.verify_answer('Bright Green', Answer.query.get(1).answer) is False
 
 
-def test_add_answer_case_sensitive(app, client, logged_in_headers):
+def test_add_answers_case_sensitive(app, client, logged_in_headers):
     """Test the answers POST route when case sensitive answers are enabled."""
-    app.config['CASE_SENSITIVE_ANSWERS'] = True
-    data = json.dumps({
-        'question_id': 2,
-        'answer': 'Bright Green'
-    })
-    client.post('/api/v1/answers', headers=logged_in_headers, data=data)
+    data = json.dumps([
+        {
+            'question_id': 2,
+            'answer': 'Bright Green'
+        },
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+    ])
+    with mock.patch.dict(app.config, {'CASE_SENSITIVE_ANSWERS': True}):
+        client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert Answer.verify_answer('bright green', Answer.query.get(1).answer) is False
     assert Answer.verify_answer('Bright Green', Answer.query.get(1).answer) is True
 
 
-def test_add_answer_not_min_length(client, logged_in_headers):
+def test_add_answers_not_min_length(client, logged_in_headers):
     """Test that the answers POST route doesn't allow an answer that is too short."""
-    data = json.dumps({
-        'question_id': 2,
-        'answer': 'd'
-    })
+    data = json.dumps([
+        {
+            'question_id': 2,
+            'answer': 'b'
+        },
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+    ])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The answer must be at least 2 characters long',
@@ -377,11 +482,21 @@ def test_add_answer_not_min_length(client, logged_in_headers):
     }
 
 
-def test_add_answer_no_question_id(client, logged_in_headers):
+def test_add_answers_no_question_id(client, logged_in_headers):
     """Test that the answers POST route doesn't allow an answer without a question_id."""
-    data = json.dumps({
-        'answer': 'not sure'
-    })
+    data = json.dumps([
+        {
+            'answer': 'not sure'
+        },
+        {
+            'question_id': 3,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+    ])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The parameter "question_id" must not be empty',
@@ -389,12 +504,22 @@ def test_add_answer_no_question_id(client, logged_in_headers):
     }
 
 
-def test_add_answer_invalid_question_id(client, logged_in_headers):
+def test_add_answers_invalid_question_id(client, logged_in_headers):
     """Test that the answers POST route doesn't allow an answer with an invalid question_id."""
-    data = json.dumps({
-        'answer': 'not sure',
-        'question_id': 12345
-    })
+    data = json.dumps([
+        {
+            'question_id': 123,
+            'answer': 'Buzz Lightyear'
+        },
+        {
+            'question_id': 1,
+            'answer': 'strawberry'
+        },
+        {
+            'question_id': 2,
+            'answer': 'bright pink'
+        },
+    ])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The "question_id" is invalid',
