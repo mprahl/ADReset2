@@ -70,8 +70,9 @@ def add_jwt_claims(identity):
     """
     ad = adreset.ad.AD()
     ad.service_account_login()
+    claims = {}
     if ad.check_admin_group_membership(identity['guid']):
-        return {'roles': ['admin']}
+        claims['roles'] = ['admin']
     elif ad.check_user_group_membership(identity['guid']):
         # Make sure there are enough questions configured for the application to be usable
         total_questions = db.session.query(func.count(Question.question)).scalar()
@@ -80,9 +81,13 @@ def add_jwt_claims(identity):
                       .format(total_questions, current_app.config['REQUIRED_ANSWERS']))
             raise ValidationError('The administrator has not finished configuring the application')
         else:
-            return {'roles': ['user']}
+            claims['roles'] = ['user']
     else:
         raise Unauthorized('You don\'t have access to use this application')
+
+    username = ad.get_sam_account_name(identity['guid'])
+    claims['username'] = username
+    return claims
 
 
 def create_app(config_obj=None):

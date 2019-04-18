@@ -287,7 +287,7 @@ def add_answers():
     """
     user_ad_guid = get_jwt_identity()['guid']
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
-    username = User.get_ad_username_from_id(user_id)
+    username = get_jwt_identity()['username']
     # Make sure the user hasn't already set the required amount of secret answers
     num_answers_in_db = \
         (db.session.query(func.count(Answer.answer))).filter_by(user_id=user_id).scalar()
