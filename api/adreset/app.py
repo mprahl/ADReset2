@@ -53,7 +53,7 @@ def insert_headers(response):
     if cors_url:
         response.headers['Access-Control-Allow-Origin'] = cors_url
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, OPTIONS'
+        response.headers['Access-Control-Allow-Methods'] = 'DELETE, GET, OPTIONS, PATCH, POST'
     return response
 
 
