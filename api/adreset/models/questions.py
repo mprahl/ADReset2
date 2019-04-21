@@ -109,7 +109,7 @@ class Answer(db.Model):
         rv = {
             'id': self.id,
             'user_id': self.user_id,
-            'question_id': self.question_id
+            'question': self.question.to_json(),
         }
         if include_url:
             rv['url'] = url_for('api_v1.get_answer', answer_id=self.id, _external=True)

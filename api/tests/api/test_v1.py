@@ -249,19 +249,34 @@ def test_add_answers(client, logged_in_headers, admin_logged_in_headers):
     assert json.loads(rv.data.decode('utf-8')) == [
         {
             'id': 1,
-            'question_id': 3,
+            'question': {
+                'enabled': True,
+                'id': 3,
+                'question': 'What is your favorite toy?',
+                'url': 'http://localhost/api/v1/questions/3',
+            },
             'url': 'http://localhost/api/v1/answers/1',
             'user_id': 1,
         },
         {
             'id': 2,
-            'question_id': 1,
+            'question': {
+                'enabled': True,
+                'id': 1,
+                'question': 'What is your favorite flavor of ice cream?',
+                'url': 'http://localhost/api/v1/questions/1',
+            },
             'url': 'http://localhost/api/v1/answers/2',
             'user_id': 1,
         },
         {
             'id': 3,
-            'question_id': 2,
+            'question': {
+                'enabled': True,
+                'id': 2,
+                'question': 'What is your favorite color?',
+                'url': 'http://localhost/api/v1/questions/2',
+            },
             'url': 'http://localhost/api/v1/answers/3',
             'user_id': 1,
         },
@@ -535,7 +550,12 @@ def test_get_answer(client, logged_in_headers, admin_logged_in_headers):
     rv = client.get('/api/v1/answers/1', headers=logged_in_headers)
     assert json.loads(rv.data.decode('utf-8')) == {
         'id': 1,
-        'question_id': 1,
+        'question': {
+            'enabled': True,
+            'id': 1,
+            'question': 'What is your favorite flavor of ice cream?',
+            'url': 'http://localhost/api/v1/questions/1'
+        },
         'user_id': 1
     }
 
@@ -585,19 +605,34 @@ def test_get_answers(client, logged_in_headers, admin_logged_in_headers):
     items = [
         {
             'id': 1,
-            'question_id': 1,
+            'question': {
+                'enabled': True,
+                'id': 1,
+                'question': 'What is your favorite flavor of ice cream?',
+                'url': 'http://localhost/api/v1/questions/1',
+            },
             'url': 'http://localhost/api/v1/answers/1',
             'user_id': 1
         },
         {
             'id': 2,
-            'question_id': 2,
+            'question': {
+                'enabled': True,
+                'id': 2,
+                'question': 'What is your favorite color?',
+                'url': 'http://localhost/api/v1/questions/2',
+            },
             'url': 'http://localhost/api/v1/answers/2',
             'user_id': 1
         },
         {
             'id': 3,
-            'question_id': 3,
+            'question': {
+                'enabled': True,
+                'id': 3,
+                'question': 'What is your favorite toy?',
+                'url': 'http://localhost/api/v1/questions/3',
+            },
             'url': 'http://localhost/api/v1/answers/3',
             'user_id': 1
         }
@@ -627,19 +662,34 @@ def test_get_answers_unauthenticated(client, logged_in_headers, mock_ad):
     items = [
         {
             'id': 1,
-            'question_id': 1,
+            'question': {
+                'enabled': True,
+                'id': 1,
+                'question': 'What is your favorite flavor of ice cream?',
+                'url': 'http://localhost/api/v1/questions/1',
+            },
             'url': 'http://localhost/api/v1/answers/1',
             'user_id': 1
         },
         {
             'id': 2,
-            'question_id': 2,
+            'question': {
+                'enabled': True,
+                'id': 2,
+                'question': 'What is your favorite color?',
+                'url': 'http://localhost/api/v1/questions/2',
+            },
             'url': 'http://localhost/api/v1/answers/2',
             'user_id': 1
         },
         {
             'id': 3,
-            'question_id': 3,
+            'question': {
+                'enabled': True,
+                'id': 3,
+                'question': 'What is your favorite toy?',
+                'url': 'http://localhost/api/v1/questions/3',
+            },
             'url': 'http://localhost/api/v1/answers/3',
             'user_id': 1
         }
