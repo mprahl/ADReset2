@@ -33,7 +33,9 @@
     "rules": {
       "react/destructuring-assignment": "off",
       "react/forbid-prop-types": "off",
-      "react/jsx-one-expression-per-line": "off"
+      "react/jsx-one-expression-per-line": "off",
+      "object-curly-newline": "off",
+      "arrow-parens": "off"
     }
   },
   "browserslist": [
