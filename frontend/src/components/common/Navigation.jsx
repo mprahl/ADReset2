@@ -18,6 +18,11 @@ import logo from '../../imgs/logo.png';
 class Navigation extends Component {
   static propTypes = {
     loggedIn: PropTypes.bool.isRequired,
+    role: PropTypes.string,
+  };
+
+  static defaultProps = {
+    role: null,
   };
 
   constructor(props) {

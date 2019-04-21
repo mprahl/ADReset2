@@ -4,12 +4,13 @@ import { PropTypes } from 'prop-types';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 import Person from '@material-ui/icons/Person';
 import Lock from '@material-ui/icons/Lock';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import 'react-toastify/dist/ReactToastify.css';
-// eslint-disable-next-line object-curly-newline
-import { Button, Container, Form, FormGroup, Input } from 'reactstrap';
+import {
+  Container, Form, FormGroup, Input,
+} from 'reactstrap';
 
 import AuthService from '../utils/AuthService';
+import IconButton from './common/IconButton';
 import './Login.css';
 import windowsLogo from '../imgs/windows.png';
 
@@ -44,7 +45,7 @@ class Login extends Component {
       .then(() => {
         this.props.setLoggedIn(true);
       })
-      .catch(error => {
+      .catch((error) => {
         this.setState({ password: '', loading: false });
         this.props.displayToast('error', error.message);
       });
@@ -60,6 +61,7 @@ class Login extends Component {
       return <Redirect to={from} />;
     }
 
+    const { loading, password, username } = this.state;
     return (
       <Container>
         <div className="login-form-wrapper">
@@ -70,7 +72,7 @@ class Login extends Component {
               <Person className="input-icon" />
               <Input
                 onChange={this.handleChange}
-                value={this.state.username}
+                value={username}
                 className="login-input"
                 name="username"
                 required
@@ -81,7 +83,7 @@ class Login extends Component {
               <Lock className="input-icon" />
               <Input
                 onChange={this.handleChange}
-                value={this.state.password}
+                value={password}
                 className="login-input"
                 type="password"
                 name="password"
@@ -90,14 +92,14 @@ class Login extends Component {
               />
             </FormGroup>
             <FormGroup>
-              <Button disabled={this.state.loading} className="login-btn">
-                {this.state.loading ? (
-                  <CircularProgress className="btn-icon" size="20px" />
-                ) : (
-                  <ExitToApp className="btn-icon" />
-                )}
+              <IconButton
+                buttonClassName="login-btn"
+                loading={loading}
+                Icon={ExitToApp}
+                primary={false}
+              >
                 Login
-              </Button>
+              </IconButton>
             </FormGroup>
           </Form>
         </div>
