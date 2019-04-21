@@ -1,0 +1,11 @@
+/* This can't be converted to inline styling since media queries are required */
+.question-label {
+  font-weight: bold;
+}
+
+@media (min-width: 992px) {
+  .question-input {
+    width: 75%;
+    max-width: 600px;
+  }
+}

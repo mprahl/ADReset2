@@ -97,20 +97,9 @@ class AuthService {
     };
   }
 
-  authenticatedAPICall(relativeURL, config = null, accessLevel = null) {
+  apiCall(relativeURL, config = null) {
     return new Promise((resolve, reject) => {
-      if (!this.isLoggedIn()) {
-        reject(new Error('You must be logged-in to perform this action'));
-      }
-
-      if (accessLevel === 'user' && !this.isUser()) {
-        reject(new Error('You must be an unprivileged user to perform this action'));
-      } else if (accessLevel === 'admin' && !this.isAdmin()) {
-        reject(new Error('You must be an administrator to perform this action'));
-      }
-
-      const headers = this.getAuthHeader();
-      const axiosConfig = { url: `${this.apiURL}${relativeURL}`, headers, ...config };
+      const axiosConfig = { url: `${this.apiURL}${relativeURL}`, ...config };
       axios(axiosConfig)
         .then(res => {
           resolve(res.data);
@@ -123,6 +112,23 @@ class AuthService {
           }
         });
     });
+  }
+
+  authenticatedAPICall(relativeURL, config = null, accessLevel = null) {
+    if (!this.isLoggedIn()) {
+      return Promise.reject(new Error('You must be logged-in to perform this action'));
+    }
+
+    if (accessLevel === 'user' && !this.isUser()) {
+      return Promise.reject(new Error('You must be an unprivileged user to perform this action'));
+    }
+    if (accessLevel === 'admin' && !this.isAdmin()) {
+      return Promise.reject(new Error('You must be an administrator to perform this action'));
+    }
+
+    const headers = this.getAuthHeader();
+    const axiosConfig = { headers, ...config };
+    return this.apiCall(relativeURL, axiosConfig);
   }
 
   logout() {

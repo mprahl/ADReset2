@@ -1,0 +1,7 @@
+/* This can't be converted to inline styling since media queries are required */
+@media (min-width: 992px) {
+  .card {
+    max-width: 750px;
+    margin: auto;
+  }
+}

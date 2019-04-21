@@ -42,15 +42,35 @@ class Navigation extends Component {
   }
 
   render() {
-    const loginStateLink = this.props.loggedIn ? (
-      <NavLink tag={Link} to="/logout">
-        Logout
-      </NavLink>
-    ) : (
-      <NavLink tag={Link} to="/login">
-        Login
-      </NavLink>
-    );
+    let loginStateLink;
+    let roleSpecificLinks = [];
+    if (this.props.loggedIn) {
+      loginStateLink = (
+        <NavLink tag={Link} to="/logout">
+          Logout
+        </NavLink>
+      );
+
+      if (this.props.role === 'admin') {
+        roleSpecificLinks = [
+          <NavLink tag={Link} to="/configure-questions/1">
+            Configure Questions
+          </NavLink>,
+        ];
+      } else if (this.props.role === 'user') {
+        roleSpecificLinks = [
+          <NavLink tag={Link} to="/set-answers">
+            Set Answers
+          </NavLink>,
+        ];
+      }
+    } else {
+      loginStateLink = (
+        <NavLink tag={Link} to="/login">
+          Login
+        </NavLink>
+      );
+    }
 
     return (
       <Navbar dark expand="sm">
@@ -61,10 +81,11 @@ class Navigation extends Component {
           <NavbarToggler onClick={this.toggle} />
           <Collapse isOpen={this.state.isOpen} navbar>
             <Nav className="ml-auto" navbar>
+              {roleSpecificLinks.map((link, index) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <NavItem key={index}>{link}</NavItem>
+              ))}
               <NavItem>{loginStateLink}</NavItem>
-              <NavItem>
-                <NavLink href="#">Placeholder</NavLink>
-              </NavItem>
             </Nav>
           </Collapse>
         </Container>

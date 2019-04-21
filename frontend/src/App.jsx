@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-// eslint-disable-next-line object-curly-newline
 import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,7 +7,8 @@ import Navigation from './components/common/Navigation';
 import Home from './components/Home';
 import Login from './components/Login';
 import Logout from './components/Logout';
-import SetQuestion from './components/admin/SetQuestion';
+import ConfigureQuestions from './components/admin/ConfigureQuestions';
+import SetAnswers from './components/user/SetAnswers';
 
 import AuthService from './utils/AuthService';
 import './App.css';
@@ -53,10 +53,11 @@ class App extends Component {
     }
 
     let authorized = true;
-    if (rest.accessRole === 'admin' && this.authService.isAdmin() === false) {
+    const { accessRole } = rest;
+    if (accessRole === 'admin' && this.authService.isAdmin() === false) {
       this.displayToast('error', 'You must be an administrator to access that page');
       authorized = false;
-    } else if (rest.accessRole === 'user' && this.authService.isUser() === false) {
+    } else if (accessRole === 'user' && this.authService.isUser() === false) {
       this.displayToast('error', 'You must be an unprivileged user to access that page');
       authorized = false;
     }
@@ -107,7 +108,13 @@ class App extends Component {
               exact
               path="/configure-questions/:page"
               accessRole="admin"
-              component={() => <SetQuestion displayToast={this.displayToast} />}
+              component={() => <ConfigureQuestions displayToast={this.displayToast} />}
+            />
+            <this.ProtectedRoute
+              exact
+              path="/set-answers"
+              accessRole="user"
+              component={() => <SetAnswers displayToast={this.displayToast} />}
             />
           </Switch>
           <ToastContainer hideProgressBar={false} />
