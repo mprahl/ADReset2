@@ -2,8 +2,7 @@ Flask>=1.0.0
 Flask-Migrate
 Flask-SQLAlchemy
 flask-jwt-extended>=3.12.0
-# Waiting on https://github.com/cannatag/ldap3/pull/576
-ldap3==2.5
+ldap3>=2.6
 passlib
 python-json-logger
 six
