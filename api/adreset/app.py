@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import os
+import platform
 from datetime import datetime
 
 from flask import Flask, current_app
@@ -32,8 +33,14 @@ def load_config(app):
 
     app.config.from_object(default_config_obj)
     config_file = os.environ.get('ADRESET_CONFIG')
+    if config_file is None:
+        if platform.system() == 'Linux':
+            config_file = '/etc/adreset/config.json'
+        elif platform.system() == 'Windows':
+            program_data = os.getenv('PROGRAMDATA')
+            config_file = os.path.join(program_data, 'adreset', 'config.json')
     if config_file and os.path.isfile(config_file):
-        app.config.from_pyfile(config_file)
+        app.config.from_json(config_file)
 
     if os.environ.get('SECRET_KEY'):
         app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
