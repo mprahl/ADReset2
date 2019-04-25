@@ -36,7 +36,7 @@ class Logout extends Component {
       this.logout();
       return <Spinner />;
     }
-    return <Redirect to="/login" />;
+    return <Redirect to="/" />;
   }
 }
 

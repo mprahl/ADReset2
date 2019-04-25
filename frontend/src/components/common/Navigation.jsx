@@ -42,33 +42,37 @@ class Navigation extends Component {
   }
 
   render() {
-    let loginStateLink;
-    let roleSpecificLinks = [];
-    if (this.props.loggedIn) {
-      loginStateLink = (
+    const links = [];
+    if (this.props.role === 'admin') {
+      links.push(
+        <NavLink tag={Link} to="/configure-questions/1">
+          Configure Questions
+        </NavLink>,
+      );
+    } else {
+      links.push(
+        <NavLink tag={Link} to="/">
+          Home
+        </NavLink>,
+      );
+      links.push(
+        <NavLink tag={Link} to="/set-answers">
+          Set Answers
+        </NavLink>,
+      );
+    }
+
+    if (this.props.loggedIn === true) {
+      links.push(
         <NavLink tag={Link} to="/logout">
           Logout
-        </NavLink>
+        </NavLink>,
       );
-
-      if (this.props.role === 'admin') {
-        roleSpecificLinks = [
-          <NavLink tag={Link} to="/configure-questions/1">
-            Configure Questions
-          </NavLink>,
-        ];
-      } else if (this.props.role === 'user') {
-        roleSpecificLinks = [
-          <NavLink tag={Link} to="/set-answers">
-            Set Answers
-          </NavLink>,
-        ];
-      }
     } else {
-      loginStateLink = (
+      links.push(
         <NavLink tag={Link} to="/login">
           Login
-        </NavLink>
+        </NavLink>,
       );
     }
 
@@ -81,11 +85,10 @@ class Navigation extends Component {
           <NavbarToggler onClick={this.toggle} />
           <Collapse isOpen={this.state.isOpen} navbar>
             <Nav className="ml-auto" navbar>
-              {roleSpecificLinks.map((link, index) => (
+              {links.map((link, index) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <NavItem key={index}>{link}</NavItem>
               ))}
-              <NavItem>{loginStateLink}</NavItem>
             </Nav>
           </Collapse>
         </Container>
