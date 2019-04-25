@@ -58,14 +58,14 @@ class ConfigureQuestions extends Component {
     const page = parseInt(this.props.match.params.page, 10);
     this.apiService
       .getSecretQuestions(page)
-      .then((data) => {
+      .then(data => {
         this.setState({
           loading: false,
           questions: data.items,
           pages: data.meta.pages,
         });
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
       });
   }
@@ -91,7 +91,7 @@ class ConfigureQuestions extends Component {
 
     this.apiService
       .patchSecretQuestion(questionID, { enabled })
-      .then((data) => {
+      .then(data => {
         const { questions } = this.state;
         questions[this.getQuestionIndex(questionID)].enabled = data.enabled;
         this.setState({ questions });
@@ -101,7 +101,7 @@ class ConfigureQuestions extends Component {
         );
         btn.disabled = false;
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
         btn.disabled = false;
       });
@@ -139,7 +139,7 @@ class ConfigureQuestions extends Component {
         this.getQuestions();
         addQuestionInput.disabled = false;
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
         addQuestionInput.disabled = false;
       });
