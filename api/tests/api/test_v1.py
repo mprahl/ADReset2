@@ -19,7 +19,6 @@ def test_about(client):
     assert json.loads(rv.data.decode('utf-8')) == {
         'allow_duplicate_answers': False,
         'answers_minimum_length': 2,
-        'case_sensitive': False,
         'required_answers': 3,
         'version': version
     }
