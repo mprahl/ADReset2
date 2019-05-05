@@ -79,7 +79,7 @@ class Home extends Component {
     });
 
     return (
-      <Container className="mb-5">
+      <Container>
         <h2 className="text-center mb-5">Password Reset Portal</h2>
         <Card style={{ maxWidth: '900px' }}>
           <CardHeader>Getting Started</CardHeader>

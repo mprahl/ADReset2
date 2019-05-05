@@ -261,7 +261,7 @@ class SetAnswers extends Component {
     return (
       <Container>
         {header}
-        <Card className="mb-5">
+        <Card>
           <CardHeader>Set Your Secret Questions</CardHeader>
           <CardBody>
             <Form id="js-answer-form" onSubmit={this.handleSubmit}>

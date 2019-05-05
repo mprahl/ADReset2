@@ -216,7 +216,7 @@ class ConfigureQuestions extends Component {
     );
 
     return (
-      <Container className="mb-5">
+      <Container>
         <h2 className="text-center mb-5">Manage Secret Questions</h2>
         <Table hover bordered responsive className="secret-questions-table">
           <thead className="thead-blue">
