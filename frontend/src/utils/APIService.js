@@ -89,6 +89,11 @@ class APIService {
     return this.authService.authenticatedAPICall(`/questions/${questionID}`, axiosConfig, 'admin');
   }
 
+  getUserAnswers(username) {
+    // Assumes there's no way the user is required to answer more than 100 questions
+    return this.authService.apiCall(`/answers/${username}?per_page=100`);
+  }
+
   getAnswers() {
     // Assumes there's no way the user is required to answer more than 100 questions
     return this.authService.authenticatedAPICall('/answers?per_page=100', null, 'user');
@@ -105,6 +110,18 @@ class APIService {
   deleteAnswers() {
     const axiosConfig = { method: 'delete' };
     return this.authService.authenticatedAPICall('/answers', axiosConfig, 'user');
+  }
+
+  resetPassword(answers, newPassword, username) {
+    const axiosConfig = {
+      data: {
+        answers,
+        new_password: newPassword,
+        username,
+      },
+      method: 'post',
+    };
+    return this.authService.apiCall('/reset', axiosConfig);
   }
 }
 

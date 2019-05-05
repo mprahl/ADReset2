@@ -9,6 +9,7 @@ import Login from './components/Login';
 import Logout from './components/Logout';
 import ConfigureQuestions from './components/admin/ConfigureQuestions';
 import SetAnswers from './components/user/SetAnswers';
+import VerifyAnswers from './components/user/VerifyAnswers';
 
 import AuthService from './utils/AuthService';
 import './App.css';
@@ -119,6 +120,13 @@ class App extends Component {
               path="/set-answers"
               accessRole="user"
               component={() => <SetAnswers displayToast={this.displayToast} />}
+            />
+            <Route
+              exact
+              path="/reset-with-questions/:username?"
+              component={() => (
+                <VerifyAnswers displayToast={this.displayToast} loggedIn={this.state.loggedIn} />
+              )}
             />
           </Switch>
           <ToastContainer hideProgressBar={false} />

@@ -1,0 +1,6 @@
+@media (min-width: 992px) {
+  .answer-input {
+    width: 75%;
+    max-width: 600px;
+  }
+}

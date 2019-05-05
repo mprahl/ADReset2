@@ -20,6 +20,13 @@ body {
   border-color: #395169 !important;
 }
 
+@media (min-width: 992px) {
+  .custom-card {
+    max-width: 750px;
+    margin: auto;
+  }
+}
+
 .card-header {
   background-color: #ecf0f1 !important;
   border-color: #ecf0f1 !important;

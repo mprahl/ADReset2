@@ -10,7 +10,6 @@ import APIService from '../../utils/APIService';
 import IconButton from '../common/IconButton';
 import SetAnswersFormGroup from './SetAnswersFormGroup';
 import Spinner from '../common/Spinner';
-import './SetAnswers.css';
 
 class SetAnswers extends Component {
   static propTypes = {
@@ -263,7 +262,7 @@ class SetAnswers extends Component {
     return (
       <Container>
         {header}
-        <Card>
+        <Card className="custom-card">
           <CardHeader>Set Your Secret Questions</CardHeader>
           <CardBody>
             <Form id="js-answer-form" onSubmit={this.handleSubmit}>

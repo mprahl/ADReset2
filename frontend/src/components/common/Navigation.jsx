@@ -42,19 +42,22 @@ class Navigation extends Component {
   }
 
   render() {
+    const { loggedIn, role } = this.props;
     const links = [];
-    if (this.props.role === 'admin') {
+    if (role === 'admin') {
       links.push(
         <NavLink tag={Link} to="/configure-questions/1">
           Configure Questions
         </NavLink>,
       );
     } else {
-      links.push(
-        <NavLink tag={Link} to="/">
-          Home
-        </NavLink>,
-      );
+      if (loggedIn === false) {
+        links.push(
+          <NavLink tag={Link} to="/reset-with-questions">
+            Forgot Password
+          </NavLink>,
+        );
+      }
       links.push(
         <NavLink tag={Link} to="/set-answers">
           Set Answers
