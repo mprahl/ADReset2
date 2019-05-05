@@ -152,6 +152,7 @@ class SetAnswers extends Component {
             return answer.question;
           });
           this.setState({
+            about,
             configured: true,
             initialLoading: false,
             questions,
@@ -252,6 +253,7 @@ class SetAnswers extends Component {
           handleSelect={this.handleSelect}
           key={i}
           loading={setLoading}
+          minLength={about.answers_minimum_length}
           questions={questionOptions}
           questionNumber={i}
         />,

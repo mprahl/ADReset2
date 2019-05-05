@@ -17,6 +17,7 @@ class SetAnswersFormGroup extends Component {
     handleInput: PropTypes.func.isRequired,
     handleSelect: PropTypes.func.isRequired,
     loading: PropTypes.bool,
+    minLength: PropTypes.number.isRequired,
     questions: PropTypes.array.isRequired,
     questionNumber: PropTypes.number.isRequired,
   };
@@ -41,6 +42,7 @@ class SetAnswersFormGroup extends Component {
       handleInput,
       handleSelect,
       loading,
+      minLength,
       questions,
       questionNumber,
     } = this.props;
@@ -75,6 +77,7 @@ class SetAnswersFormGroup extends Component {
           className="mt-2 question-input"
           data-id={questionNumber}
           disabled={configured || loading}
+          minLength={minLength}
           name={`answer${displayQuestionNumber}`}
           onChange={handleInput}
           placeholder={configured ? 'Your answer is set' : 'Please enter an answer'}
