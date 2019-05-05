@@ -380,8 +380,8 @@ def add_answers():
     return jsonify(answers_json), 201
 
 
-@api_v1.route('/reset/<username>', methods=['POST'])
-def reset_password(username):
+@api_v1.route('/reset', methods=['POST'])
+def reset_password():
     """
     Reset a user's password using their secret answers.
 
@@ -390,8 +390,10 @@ def reset_password(username):
     req_json = request.get_json(force=True)
     _validate_api_input(req_json, 'answers', list)
     _validate_api_input(req_json, 'new_password', string_types)
+    _validate_api_input(req_json, 'username', string_types)
     answers = req_json['answers']
     new_password = req_json['new_password']
+    username = req_json['username']
 
     not_setup_msg = ('You must have configured at least {0} secret answers before resetting your '
                      'password').format(current_app.config['REQUIRED_ANSWERS'])
