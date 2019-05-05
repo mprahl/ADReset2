@@ -46,7 +46,7 @@ class APIService {
     return new Promise((resolve, reject) => {
       let items = [];
       this.getSecretQuestions(1, 0, true)
-        .then((data) => {
+        .then(data => {
           const count = data.meta.total;
           // Calculate how many pages there are when 50 are fetched at a time
           const pages = Math.ceil(count / 50);
@@ -57,17 +57,17 @@ class APIService {
             page += 1;
           }
           Promise.all(promises)
-            .then((apiPages) => {
-              apiPages.forEach((apiPage) => {
+            .then(apiPages => {
+              apiPages.forEach(apiPage => {
                 items = items.concat(apiPage.items);
               });
               resolve(items);
             })
-            .catch((error) => {
+            .catch(error => {
               reject(error);
             });
         })
-        .catch((error) => {
+        .catch(error => {
           reject(error);
         });
     });
