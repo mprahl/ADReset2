@@ -75,7 +75,11 @@ class App extends Component {
         <React.Fragment>
           <Navigation loggedIn={this.state.loggedIn} role={this.state.role} />
           <Switch>
-            <Route exact path="/" component={() => <Home role={this.state.role} />} />
+            <Route
+              exact
+              path="/"
+              component={() => <Home loggedIn={this.state.loggedIn} role={this.state.role} />}
+            />
             <Route
               exact
               path="/login"

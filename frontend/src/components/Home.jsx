@@ -23,6 +23,7 @@ const cardLinkStyle = {
 
 class Home extends Component {
   static propTypes = {
+    loggedIn: PropTypes.bool.isRequired,
     role: PropTypes.string,
   };
 
@@ -47,12 +48,13 @@ class Home extends Component {
   };
 
   render() {
-    if (this.props.role === 'admin') {
+    const { loggedIn, role } = this.props;
+    if (role === 'admin') {
       return <Redirect to="/configure-questions/1" />;
     }
 
     const disabledButtons = [];
-    ['Change Password', 'Reset With Questions', 'Reset With Email'].forEach((text, i) => {
+    ['Change Password', 'Reset With Email'].forEach((text, i) => {
       disabledButtons.push(
         // eslint-disable-next-line react/no-array-index-key
         <React.Fragment key={i}>
@@ -70,7 +72,7 @@ class Home extends Component {
             target={`disabled${i + 1}`}
             toggle={this.toggle}
           >
-            This functionality is disabled by your administrator.
+            This functionality is disabled by your administrator
           </Tooltip>
         </React.Fragment>,
       );
@@ -85,7 +87,7 @@ class Home extends Component {
             <CardTitle>About The Portal</CardTitle>
             <div style={{ maxWidth: '750px' }}>
               <CardText className="mt-4">
-                ADReset allows you to reset your Windows (Active Directory) password via secret
+                ADReset allows you to reset your Windows (Active Directory) password using secret
                 questions or a secondary email.
               </CardText>
               <CardText>
@@ -94,15 +96,27 @@ class Home extends Component {
                 are set.
               </CardText>
               <CardText>
-                You may also simply change your password without resetting it by simply entering
-                your current password and your new password. To do so, simply click on &quot;Change
-                Password&quot;.
+                You may also change your password without resetting it by entering your current
+                password and desired new password. To do so, click on &quot;Change Password&quot;.
               </CardText>
               <CardText style={{ marginTop: '2rem' }}>Please select an option below:</CardText>
               <Link style={cardLinkStyle} className="btn btn-primary" to="/set-answers">
                 Set Questions
               </Link>
-              {disabledButtons}
+              {!loggedIn ? (
+                <React.Fragment>
+                  <Link
+                    style={cardLinkStyle}
+                    className="btn btn-primary"
+                    to="/reset-with-questions"
+                  >
+                    Reset With Questions
+                  </Link>
+                  {disabledButtons}
+                </React.Fragment>
+              ) : (
+                ''
+              )}
             </div>
           </CardBody>
         </Card>
