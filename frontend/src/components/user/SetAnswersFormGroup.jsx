@@ -1,13 +1,9 @@
 import React, { Component } from 'react';
 import { PropTypes } from 'prop-types';
-import {
-  FormGroup, Input, InputGroup, InputGroupAddon, InputGroupText, Label,
-} from 'reactstrap';
-import Visibility from '@material-ui/icons/Visibility';
-import VisibilityOff from '@material-ui/icons/VisibilityOff';
+import { FormGroup, Input, Label } from 'reactstrap';
 
+import PasswordInput from '../common/PasswordInput';
 import './SetAnswersFormGroup.css';
-
 
 /**
  * Creates a form group consisting of a questions select input and answer text input.
@@ -28,14 +24,6 @@ class SetAnswersFormGroup extends Component {
   static defaultProps = {
     loading: false,
   };
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      visible: false,
-    };
-  }
-
 
   /**
    * Toggles the visibility of the answer input field.
@@ -64,7 +52,6 @@ class SetAnswersFormGroup extends Component {
       </option>
     ));
 
-    const { visible } = this.state;
     // The question indexes start at 0, but the user should see 1 instead
     const displayQuestionNumber = questionNumber + 1;
     return (
@@ -84,25 +71,15 @@ class SetAnswersFormGroup extends Component {
         >
           {questionOptions}
         </Input>
-        <InputGroup className="mt-2 question-input">
-          <Input
-            data-id={questionNumber}
-            disabled={configured || loading}
-            name={`answer${displayQuestionNumber}`}
-            onChange={handleInput}
-            placeholder={configured ? 'Your answer is set' : 'Please enter an answer'}
-            required={!configured}
-            type={visible ? 'text' : 'password'}
-          />
-          <InputGroupAddon addonType="append">
-            <InputGroupText
-              onClick={this.toggleVisibility}
-              style={{ cursor: configured ? 'initial' : 'pointer' }}
-            >
-              {!visible || configured ? <VisibilityOff /> : <Visibility />}
-            </InputGroupText>
-          </InputGroupAddon>
-        </InputGroup>
+        <PasswordInput
+          className="mt-2 question-input"
+          data-id={questionNumber}
+          disabled={configured || loading}
+          name={`answer${displayQuestionNumber}`}
+          onChange={handleInput}
+          placeholder={configured ? 'Your answer is set' : 'Please enter an answer'}
+          required={!configured}
+        />
       </FormGroup>
     );
   }
