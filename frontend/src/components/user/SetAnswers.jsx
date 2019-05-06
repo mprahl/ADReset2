@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import { PropTypes } from 'prop-types';
-import {
-  Card, CardBody, CardHeader, Container, Form, FormGroup,
-} from 'reactstrap';
+import { Card, CardBody, CardHeader, Container, Form, FormGroup } from 'reactstrap';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 import Undo from '@material-ui/icons/Undo';
 
@@ -13,13 +11,13 @@ import Spinner from '../common/Spinner';
 
 class SetAnswers extends Component {
   static propTypes = {
+    about: PropTypes.object.isRequired,
     displayToast: PropTypes.func.isRequired,
   };
 
   constructor(props) {
     super(props);
     this.state = {
-      about: null,
       configured: false,
       initialLoading: true,
       setLoading: false,
@@ -43,14 +41,14 @@ class SetAnswers extends Component {
    *
    * @param {*} event The event that triggered this handler.
    */
-  handleSelect = (event) => {
+  handleSelect = event => {
     const select = event.target;
     const inputID = parseInt(select.attributes['data-id'].value, 10);
     const selectedQuestionID = parseInt(
       select.options[select.selectedIndex].attributes['data-id'].value,
       10,
     );
-    this.setState((oldState) => {
+    this.setState(oldState => {
       const selectedQuestions = oldState.selectedQuestions.slice();
       selectedQuestions[inputID] = selectedQuestionID;
       return { selectedQuestions };
@@ -62,10 +60,10 @@ class SetAnswers extends Component {
    *
    * @param {*} event The event that triggered this handler.
    */
-  handleInput = (event) => {
+  handleInput = event => {
     const input = event.target;
     const inputID = parseInt(input.attributes['data-id'].value, 10);
-    this.setState((oldState) => {
+    this.setState(oldState => {
       const selectedAnswers = oldState.selectedAnswers.slice();
       selectedAnswers[inputID] = input.value.trim();
       return { selectedAnswers };
@@ -77,7 +75,7 @@ class SetAnswers extends Component {
    *
    * @param {*} event The event that triggered this handler.
    */
-  handleSubmit = (event) => {
+  handleSubmit = event => {
     event.preventDefault();
     const { selectedQuestions, selectedAnswers } = this.state;
     const answers = selectedAnswers.map((answer, inputID) => ({
@@ -92,7 +90,7 @@ class SetAnswers extends Component {
         form.reset();
         this.initialize();
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
         this.setState({ setLoading: false });
       });
@@ -103,7 +101,7 @@ class SetAnswers extends Component {
    *
    * @param {*} event The event that triggered this handler.
    */
-  handleReset = (event) => {
+  handleReset = event => {
     event.preventDefault();
     this.setState({ resetLoading: true });
     this.apiService
@@ -112,7 +110,7 @@ class SetAnswers extends Component {
         this.props.displayToast('info', 'Your answers were reset successfully');
         this.initialize();
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
         this.setState({ resetLoading: false });
       });
@@ -122,12 +120,11 @@ class SetAnswers extends Component {
    * Initialize the React state with the user's state in the API.
    */
   initialize() {
-    // Query the "about" API endpoint, so that the code knows how many answers are required by the
-    // the administrator. Additionally, get the user's answers to know if they are configured or
-    // not.
-    Promise.all([this.apiService.getAbout(), this.apiService.getAnswers()])
-      .then((returnValues) => {
-        const [about, answersRv] = returnValues;
+    const { about } = this.props;
+    // Get the user's answers to know if they are configured or not
+    this.apiService
+      .getAnswers()
+      .then(answersRv => {
         const answers = answersRv.items;
         // If the user has configured their answers in the past, then show them which questions they
         // chose
@@ -151,7 +148,6 @@ class SetAnswers extends Component {
             return answer.question;
           });
           this.setState({
-            about,
             configured: true,
             initialLoading: false,
             questions,
@@ -168,7 +164,7 @@ class SetAnswers extends Component {
         // choose to answer.
         this.apiService
           .getAllEnabledSecretQuestions()
-          .then((questions) => {
+          .then(questions => {
             const { selectedQuestions } = this.state;
             // Only set the defaults if it hasn't been previously set before. For instance,
             // if the user resets their answers, the selected questions in the UI remain the same,
@@ -181,13 +177,12 @@ class SetAnswers extends Component {
               }
             }
             this.setState({
-              about,
               questions,
               selectedQuestions,
               configured: false,
             });
           })
-          .catch((error) => {
+          .catch(error => {
             this.props.displayToast('error', error.message);
             // If the query to get all the questions fails, then there's nothing the UI can do
             this.setState({ fatalError: true });
@@ -196,10 +191,10 @@ class SetAnswers extends Component {
             this.setState({ initialLoading: false, setLoading: false, resetLoading: false });
           });
       })
-      .catch((error) => {
+      .catch(error => {
         this.props.displayToast('error', error.message);
-        // If the query to the about API endpoint, or the one to get the user's configured answers
-        // fails, then there's nothing the UI can do
+        // If the query to get the user's configured answers fails, then there's nothing the UI
+        // can do
         this.setState({
           fatalError: true,
           initialLoading: false,
@@ -224,14 +219,8 @@ class SetAnswers extends Component {
       return <Container>{header}</Container>;
     }
 
-    const {
-      about,
-      configured,
-      questions,
-      selectedQuestions,
-      setLoading,
-      resetLoading,
-    } = this.state;
+    const { about } = this.props;
+    const { configured, questions, selectedQuestions, setLoading, resetLoading } = this.state;
 
     const questionFormGroups = [];
     // If the user already configured their answers, then only display the number of questions

@@ -7,6 +7,7 @@ import PasswordInput from '../common/PasswordInput';
 
 class VerifyAnswersForm extends Component {
   static propTypes = {
+    about: PropTypes.object.isRequired,
     configuredAnswers: PropTypes.array.isRequired,
     displayToast: PropTypes.func.isRequired,
     onResetFailure: PropTypes.func.isRequired,
@@ -109,7 +110,7 @@ class VerifyAnswersForm extends Component {
    * Return the JSX of the component to render.
    */
   render() {
-    const { configuredAnswers } = this.props;
+    const { about, configuredAnswers } = this.props;
     const { loading, newPasswordDisabled } = this.state;
 
     // Create a form group for every configured answer. This has to be dynamic because
@@ -126,6 +127,7 @@ class VerifyAnswersForm extends Component {
             data-id={index}
             disabled={loading}
             id={id}
+            minLength={about.answers_minimum_length}
             onChange={this.handleAnswerChange}
             placeholder="Enter your secret answer"
             required

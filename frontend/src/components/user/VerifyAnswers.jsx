@@ -15,6 +15,7 @@ const cardBodyStlye = {
 
 class VerifyAnswers extends Component {
   static propTypes = {
+    about: PropTypes.object.isRequired,
     displayToast: PropTypes.func.isRequired,
     history: PropTypes.object.isRequired,
     loggedIn: PropTypes.bool.isRequired,
@@ -130,9 +131,10 @@ class VerifyAnswers extends Component {
     if (!username || configuredAnswers.length === 0) {
       cardContent = <UsernameForm baseURL="/reset-with-questions/" disabled={loading} />;
     } else {
-      const { displayToast } = this.props;
+      const { about, displayToast } = this.props;
       cardContent = (
         <VerifyAnswersForm
+          about={about}
           configuredAnswers={configuredAnswers}
           displayToast={displayToast}
           onResetFailure={this.onResetFailure}
