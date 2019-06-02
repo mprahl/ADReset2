@@ -111,7 +111,7 @@ class VerifyAnswersForm extends Component {
    */
   render() {
     const { about, configuredAnswers } = this.props;
-    const { loading, newPasswordDisabled } = this.state;
+    const { loading, newPassword, newPasswordDisabled, newPasswordRepeat } = this.state;
 
     // Create a form group for every configured answer. This has to be dynamic because
     // the number of required answers will differ based on the deployment.
@@ -150,6 +150,7 @@ class VerifyAnswersForm extends Component {
             onChange={this.handleInputChange}
             placeholder="Enter your new password"
             required
+            value={newPassword}
           />
         </FormGroup>
         <FormGroup className="mt-2">
@@ -162,6 +163,7 @@ class VerifyAnswersForm extends Component {
             onChange={this.handleInputChange}
             placeholder="Enter your new password again"
             required
+            value={newPasswordRepeat}
           />
         </FormGroup>
         <Button className="mt-2" color="primary" disabled={loading || newPasswordDisabled}>
