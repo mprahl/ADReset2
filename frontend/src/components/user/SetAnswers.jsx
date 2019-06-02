@@ -37,36 +37,30 @@ class SetAnswers extends Component {
   }
 
   /**
-   * Stores the selected question in the state.
+   * Stores the user's answers in the state.
    *
-   * @param {*} event The event that triggered this handler.
+   * @param {number} index The index/question number in the selectedAnswers array.
+   * @param {string} answer The answer to store in the state.
    */
-  handleSelect = event => {
-    const select = event.target;
-    const inputID = parseInt(select.attributes['data-id'].value, 10);
-    const selectedQuestionID = parseInt(
-      select.options[select.selectedIndex].attributes['data-id'].value,
-      10,
-    );
+  setSelectedAnswer = (index, answer) => {
     this.setState(oldState => {
-      const selectedQuestions = oldState.selectedQuestions.slice();
-      selectedQuestions[inputID] = selectedQuestionID;
-      return { selectedQuestions };
+      const selectedAnswers = oldState.selectedAnswers.slice();
+      selectedAnswers[index] = answer;
+      return { selectedAnswers };
     });
   };
 
   /**
-   * Stores the user's answers in the state.
+   * Stores the selected question in the state.
    *
-   * @param {*} event The event that triggered this handler.
+   * @param {number} index The index/question number in the selectedQuestions array.
+   * @param {number} questionID The ID of the selected question.
    */
-  handleInput = event => {
-    const input = event.target;
-    const inputID = parseInt(input.attributes['data-id'].value, 10);
+  setSelectedQuestion = (index, questionID) => {
     this.setState(oldState => {
-      const selectedAnswers = oldState.selectedAnswers.slice();
-      selectedAnswers[inputID] = input.value.trim();
-      return { selectedAnswers };
+      const selectedQuestions = oldState.selectedQuestions.slice();
+      selectedQuestions[index] = questionID;
+      return { selectedQuestions };
     });
   };
 
@@ -166,15 +160,10 @@ class SetAnswers extends Component {
           .getAllEnabledSecretQuestions()
           .then(questions => {
             const { selectedQuestions } = this.state;
-            // Only set the defaults if it hasn't been previously set before. For instance,
-            // if the user resets their answers, the selected questions in the UI remain the same,
-            // and that needs to still be reflected in the component state.
-            if (!selectedQuestions.length) {
-              // By default, just select the first `about.required_answers` questions as the select
-              // options in the UI
-              for (let i = 0; i < about.required_answers; i += 1) {
-                selectedQuestions[i] = questions[i].id;
-              }
+            // By default, just select the first `about.required_answers` questions as the select
+            // options in the UI
+            for (let i = 0; i < about.required_answers; i += 1) {
+              selectedQuestions[i] = questions[i].id;
             }
             this.setState({
               questions,
@@ -237,13 +226,14 @@ class SetAnswers extends Component {
       questionFormGroups.push(
         <SetAnswersFormGroup
           configured={configured}
-          handleInput={this.handleInput}
-          handleSelect={this.handleSelect}
           key={i}
           loading={setLoading}
           minLength={about.answers_minimum_length}
           questions={questionOptions}
           questionNumber={i}
+          selectValue={selectedQuestions[i]}
+          setSelectedAnswer={this.setSelectedAnswer}
+          setSelectedQuestion={this.setSelectedQuestion}
         />,
       );
     }

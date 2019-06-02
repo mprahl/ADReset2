@@ -14,16 +14,40 @@ import './SetAnswersFormGroup.css';
 class SetAnswersFormGroup extends Component {
   static propTypes = {
     configured: PropTypes.bool.isRequired,
-    handleInput: PropTypes.func.isRequired,
-    handleSelect: PropTypes.func.isRequired,
     loading: PropTypes.bool,
     minLength: PropTypes.number.isRequired,
     questions: PropTypes.array.isRequired,
     questionNumber: PropTypes.number.isRequired,
+    selectValue: PropTypes.number.isRequired,
+    setSelectedAnswer: PropTypes.func.isRequired,
+    setSelectedQuestion: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
     loading: false,
+  };
+
+  /**
+   * Handle input changes by calling the setSelectedQuestion prop.
+   *
+   * @param {*} event The event that triggered this handler.
+   */
+  handleInput = event => {
+    const input = event.target;
+    const index = parseInt(input.attributes['data-id'].value, 10);
+    this.props.setSelectedAnswer(index, input.value.trim());
+  };
+
+  /**
+   * Handle select changes by calling the setSelectedQuestion prop.
+   *
+   * @param {*} event The event that triggered this handler.
+   */
+  handleSelect = event => {
+    const select = event.target;
+    const index = parseInt(select.attributes['data-id'].value, 10);
+    const selectedQuestionID = parseInt(select.value, 10);
+    this.props.setSelectedQuestion(index, selectedQuestionID);
   };
 
   /**
@@ -37,19 +61,11 @@ class SetAnswersFormGroup extends Component {
    * Return the JSX of the component to render.
    */
   render() {
-    const {
-      configured,
-      handleInput,
-      handleSelect,
-      loading,
-      minLength,
-      questions,
-      questionNumber,
-    } = this.props;
+    const { configured, loading, minLength, questions, questionNumber, selectValue } = this.props;
 
     // Create an option for each possible question
     const questionOptions = questions.map(question => (
-      <option key={question.id} data-id={question.id}>
+      <option key={question.id} value={question.id}>
         {question.question}
       </option>
     ));
@@ -67,9 +83,10 @@ class SetAnswersFormGroup extends Component {
           data-id={questionNumber}
           id={`question${displayQuestionNumber}`}
           name={`select${displayQuestionNumber}`}
-          onChange={handleSelect}
+          onChange={this.handleSelect}
           required={!configured}
           type="select"
+          value={selectValue}
         >
           {questionOptions}
         </Input>
@@ -79,7 +96,7 @@ class SetAnswersFormGroup extends Component {
           disabled={configured || loading}
           minLength={minLength}
           name={`answer${displayQuestionNumber}`}
-          onChange={handleInput}
+          onChange={this.handleInput}
           placeholder={configured ? 'Your answer is set' : 'Please enter an answer'}
           required={!configured}
         />
