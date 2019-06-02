@@ -22,7 +22,7 @@ class App extends Component {
     this.authService = new AuthService();
     this.state = {
       about: null,
-      loading: false,
+      loading: true,
       fatalError: false,
     };
 
