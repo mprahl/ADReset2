@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { withRouter } from 'react-router-dom';
 import { PropTypes } from 'prop-types';
-import { Container, Table, Button } from 'reactstrap';
+import { Button, Container, Modal, ModalBody, ModalFooter, ModalHeader, Table } from 'reactstrap';
 
 import './ConfigureQuestions.css';
 import APIService from '../../utils/APIService';
@@ -21,19 +21,24 @@ class ConfigureQuestions extends Component {
       questions: [],
       pages: 0,
       loading: true,
+      modalOpen: false,
       newSecretQuestion: '',
-      questionEditID: null,
+      questionStates: {},
+      // Used to keep track of the question to disable from the modal
+      questionToBeDisabled: null,
     };
     // TODO: Pass in a configurable API URL
     this.apiService = new APIService();
     this.handleChange = this.handleChange.bind(this);
     this.addSecretQuestion = this.addSecretQuestion.bind(this);
     this.getQuestions = this.getQuestions.bind(this);
-    this.setEnabled = this.setEnabled.bind(this);
+    this.handleEnabledButton = this.handleEnabledButton.bind(this);
     this.getQuestionIndex = this.getQuestionIndex.bind(this);
     this.handleNewQuestionEnter = this.handleNewQuestionEnter.bind(this);
     this.doneEditing = this.doneEditing.bind(this);
     this.questionUpdate = this.apiService.patchSecretQuestion.bind(this.apiService);
+    this.handleModalClick = this.handleModalClick.bind(this);
+    this.handleModalCancel = this.handleModalCancel.bind(this);
   }
 
   componentDidMount() {
@@ -59,10 +64,15 @@ class ConfigureQuestions extends Component {
     this.apiService
       .getSecretQuestions(page)
       .then(data => {
+        const questionStates = {};
+        data.items.forEach(question => {
+          questionStates[question.id] = { editing: false, btnDisabled: false };
+        });
         this.setState({
           loading: false,
-          questions: data.items,
           pages: data.meta.pages,
+          questions: data.items,
+          questionStates,
         });
       })
       .catch(error => {
@@ -79,16 +89,7 @@ class ConfigureQuestions extends Component {
     throw new Error(`The question with the ID ${questionID} is not stored in the state`);
   }
 
-  setEnabled(event) {
-    const btn = event.target;
-    btn.disabled = true;
-    const questionID = parseInt(
-      event.target.parentElement.parentElement.attributes['data-id'].value,
-      10,
-    );
-
-    const enabled = !this.state.questions[this.getQuestionIndex(questionID)].enabled;
-
+  setEnabled(questionID, enabled) {
     this.apiService
       .patchSecretQuestion(questionID, { enabled })
       .then(data => {
@@ -99,24 +100,56 @@ class ConfigureQuestions extends Component {
           'success',
           `The question was ${data.enabled ? 'enabled' : 'disabled'}`,
         );
-        btn.disabled = false;
       })
       .catch(error => {
         this.props.displayToast('error', error.message);
-        btn.disabled = false;
+      })
+      .finally(() => {
+        this.setState(prevState => {
+          const { questionStates } = prevState;
+          questionStates[questionID].editing = false;
+          questionStates[questionID].btnDisabled = false;
+          return { modalOpen: false, questionStates, questionToBeDisabled: null };
+        });
       });
   }
 
-  doneEditing(id = null, key = null, value = null) {
+  handleEnabledButton(event) {
+    const btn = event.target;
+    const questionID = parseInt(btn.parentElement.parentElement.attributes['data-id'].value, 10);
+    this.setState(prevState => {
+      const { questionStates } = prevState;
+      questionStates[questionID].btnDisabled = true;
+      return { questionStates };
+    });
+
+    const { enabled } = this.state.questions[this.getQuestionIndex(questionID)];
+    if (enabled) {
+      this.setState({ modalOpen: true, questionToBeDisabled: questionID });
+    } else {
+      this.setEnabled(questionID, true);
+    }
+  }
+
+  doneEditing(id, key = null, value = null) {
     // If the value is null, then no changes were made
     if (value === null) {
-      this.setState({ questionEditID: null });
+      this.setState(prevState => {
+        const { questionStates } = prevState;
+        questionStates[id].editing = false;
+        questionStates[id].btnDisabled = false;
+        return { questionStates };
+      });
       return;
     }
 
-    const { questions } = this.state;
-    questions[this.getQuestionIndex(id)][key] = value;
-    this.setState({ questions, questionEditID: null });
+    this.setState(prevState => {
+      const { questions, questionStates } = prevState;
+      questions[this.getQuestionIndex(id)][key] = value;
+      questionStates[id].editing = false;
+      questionStates[id].btnDisabled = false;
+      return { questions, questionStates };
+    });
   }
 
   addSecretQuestion(event) {
@@ -159,6 +192,21 @@ class ConfigureQuestions extends Component {
     this.setState({ [event.target.name]: event.target.value });
   }
 
+  handleModalClick(event) {
+    const btn = event.target;
+    btn.disabled = true;
+    const { questionToBeDisabled } = this.state;
+    this.setEnabled(questionToBeDisabled, false);
+  }
+
+  handleModalCancel() {
+    this.setState(prevState => {
+      const { questionStates, questionToBeDisabled } = prevState;
+      questionStates[questionToBeDisabled].btnDisabled = false;
+      return { modalOpen: false, questionStates };
+    });
+  }
+
   render() {
     if (this.state.loading === true) {
       return <Spinner />;
@@ -166,7 +214,7 @@ class ConfigureQuestions extends Component {
 
     const questions = this.state.questions.map(v => (
       <tr key={v.id} data-id={v.id}>
-        {this.state.questionEditID === v.id ? (
+        {this.state.questionStates[v.id].editing ? (
           <EditableColumn
             displayToast={this.props.displayToast}
             id={v.id}
@@ -179,7 +227,12 @@ class ConfigureQuestions extends Component {
           <td>
             <Button
               onClick={() => {
-                this.setState({ questionEditID: v.id });
+                this.setState(prevState => {
+                  const { questionStates } = prevState;
+                  questionStates[v.id].editing = true;
+                  questionStates[v.id].btnDisabled = true;
+                  return { questionStates };
+                });
               }}
               color="link"
             >
@@ -188,7 +241,11 @@ class ConfigureQuestions extends Component {
           </td>
         )}
         <td>
-          <Button onClick={this.setEnabled} color="link">
+          <Button
+            onClick={this.handleEnabledButton}
+            disabled={this.state.questionStates[v.id].btnDisabled}
+            color="link"
+          >
             {v.enabled ? 'Disable' : 'Enable'}
           </Button>
         </td>
@@ -228,6 +285,23 @@ class ConfigureQuestions extends Component {
           <tbody>{questions}</tbody>
         </Table>
         <TablePagination page={this.state.page} pages={this.state.pages} />
+        {/* The modal that is triggered when the admin tries to disable a question */}
+        <Modal isOpen={this.state.modalOpen} toggle={this.handleModalCancel}>
+          <ModalHeader toggle={this.handleModalCancel}>Disable Question</ModalHeader>
+          <ModalBody>
+            By disabling this question, users will not be able to select this question when
+            configuring their secret questions. Users that are currently using this question
+            will not be affected.
+          </ModalBody>
+          <ModalFooter>
+            <Button color="primary" onClick={this.handleModalClick}>
+              Disable it
+            </Button>
+            <Button color="secondary" onClick={this.handleModalCancel}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </Modal>
       </Container>
     );
   }

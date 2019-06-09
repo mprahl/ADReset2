@@ -31,7 +31,7 @@ class EditableColumn extends Component {
     this.setState({ loading: true });
     const { id } = this.props;
     if (this.props.value === this.state.value) {
-      this.props.done();
+      this.props.done(id);
       return;
     }
 
@@ -85,7 +85,7 @@ class EditableColumn extends Component {
         </Button>
         <Button
           onClick={() => {
-            this.props.done();
+            this.props.done(this.props.id);
           }}
           color="link"
           className="editable-btn cancel-btn"
