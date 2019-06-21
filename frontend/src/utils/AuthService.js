@@ -2,7 +2,6 @@
 import decode from 'jwt-decode';
 import axios from 'axios';
 
-// TODO: Add a check that runs every x minutes to determine if the token is expired
 class AuthService {
   constructor(apiURL) {
     if (apiURL) {
@@ -65,6 +64,14 @@ class AuthService {
     // This must be called after the user is logged in
     const token = AuthService.getToken();
     return decode(token).sub.username;
+  }
+
+  static getTokenExpirationDate() {
+    const token = AuthService.getToken();
+    const decoded = decode(token);
+    const expiration = new Date(0);
+    expiration.setUTCSeconds(decoded.exp);
+    return expiration;
   }
 
   static isTokenActive(token) {
