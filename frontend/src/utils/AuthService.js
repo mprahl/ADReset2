@@ -40,34 +40,34 @@ class AuthService {
       });
   }
 
-  isLoggedIn() {
-    const token = this.getToken();
+  static isLoggedIn() {
+    const token = AuthService.getToken();
     // The double exclamation mark is necessary to convert null to a boolean of false
-    return !!token && this.isTokenActive(token);
+    return !!token && AuthService.isTokenActive(token);
   }
 
-  getRole() {
+  static getRole() {
     // This must be called after the user is logged in
-    const decoded = decode(this.getToken());
+    const decoded = decode(AuthService.getToken());
     // Only one role is currently supported
     return decoded.user_claims.roles[0];
   }
 
-  isAdmin() {
-    return this.isLoggedIn() && this.getRole() === 'admin';
+  static isAdmin() {
+    return AuthService.isLoggedIn() && AuthService.getRole() === 'admin';
   }
 
-  isUser() {
-    return this.isLoggedIn() && this.getRole() === 'user';
+  static isUser() {
+    return AuthService.isLoggedIn() && AuthService.getRole() === 'user';
   }
 
-  getUsername() {
+  static getUsername() {
     // This must be called after the user is logged in
-    const token = this.getToken();
+    const token = AuthService.getToken();
     return decode(token).sub.username;
   }
 
-  isTokenActive(token) {
+  static isTokenActive(token) {
     try {
       const decoded = decode(token);
       // https://github.com/auth0/jwt-decode/issues/53
@@ -79,21 +79,21 @@ class AuthService {
     }
   }
 
-  setToken(token) {
+  static setToken(token) {
     localStorage.setItem('token', token);
   }
 
-  getToken() {
+  static getToken() {
     return localStorage.getItem('token');
   }
 
-  removeToken() {
+  static removeToken() {
     localStorage.removeItem('token');
   }
 
-  getAuthHeader() {
+  static getAuthHeader() {
     return {
-      Authorization: `Bearer ${this.getToken()}`,
+      Authorization: `Bearer ${AuthService.getToken()}`,
     };
   }
 
@@ -115,45 +115,45 @@ class AuthService {
   }
 
   authenticatedAPICall(relativeURL, config = null, accessLevel = null) {
-    if (!this.isLoggedIn()) {
+    if (!AuthService.isLoggedIn()) {
       return Promise.reject(new Error('You must be logged-in to perform this action'));
     }
 
-    if (accessLevel === 'user' && !this.isUser()) {
+    if (accessLevel === 'user' && !AuthService.isUser()) {
       return Promise.reject(new Error('You must be an unprivileged user to perform this action'));
     }
-    if (accessLevel === 'admin' && !this.isAdmin()) {
+    if (accessLevel === 'admin' && !AuthService.isAdmin()) {
       return Promise.reject(new Error('You must be an administrator to perform this action'));
     }
 
-    const headers = this.getAuthHeader();
+    const headers = AuthService.getAuthHeader();
     const axiosConfig = { headers, ...config };
     return this.apiCall(relativeURL, axiosConfig);
   }
 
   logout() {
-    if (!this.isLoggedIn) {
+    if (!AuthService.isLoggedIn) {
       // If the user isn't logged in, then the logout route can't be called, so just remove the
       // token
-      this.removeToken();
+      AuthService.removeToken();
       return new Promise(resolve => {
         resolve();
       });
     }
 
-    const headers = this.getAuthHeader();
+    const headers = AuthService.getAuthHeader();
 
     return axios
       .post(`${this.apiURL}/logout`, {}, { headers })
       .then(() => {
-        this.removeToken();
+        AuthService.removeToken();
         return true;
       })
       .catch(error => {
         if (error.response) {
           // If the token is expired, then just remove the token from storage
           if (error.response.status === 401) {
-            this.removeToken();
+            AuthService.removeToken();
             return true;
           }
 

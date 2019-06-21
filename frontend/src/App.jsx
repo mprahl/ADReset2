@@ -19,16 +19,15 @@ import './App.css';
 class App extends Component {
   constructor(props) {
     super(props);
-    this.authService = new AuthService();
     this.state = {
       about: null,
       loading: true,
       fatalError: false,
     };
 
-    if (this.authService.isLoggedIn()) {
+    if (AuthService.isLoggedIn()) {
       this.state.loggedIn = true;
-      this.state.role = this.authService.getRole();
+      this.state.role = AuthService.getRole();
     } else {
       this.state.loggedIn = false;
       this.state.role = null;
@@ -55,7 +54,7 @@ class App extends Component {
 
   setLoggedIn(loggedIn) {
     if (loggedIn) {
-      this.setState({ loggedIn: true, role: this.authService.getRole() });
+      this.setState({ loggedIn: true, role: AuthService.getRole() });
     } else {
       this.setState({ loggedIn: false, role: null });
     }
@@ -67,7 +66,7 @@ class App extends Component {
   }
 
   ProtectedRoute({ component: ComponentToRender, ...rest }) {
-    if (!this.authService.isLoggedIn()) {
+    if (!AuthService.isLoggedIn()) {
       return (
         <Route
           {...rest}
@@ -80,10 +79,10 @@ class App extends Component {
 
     let authorized = true;
     const { accessRole } = rest;
-    if (accessRole === 'admin' && this.authService.isAdmin() === false) {
+    if (accessRole === 'admin' && AuthService.isAdmin() === false) {
       this.displayToast('error', 'You must be an administrator to access that page');
       authorized = false;
-    } else if (accessRole === 'user' && this.authService.isUser() === false) {
+    } else if (accessRole === 'user' && AuthService.isUser() === false) {
       this.displayToast('error', 'You must be an unprivileged user to access that page');
       authorized = false;
     }
