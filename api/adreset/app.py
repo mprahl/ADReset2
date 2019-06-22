@@ -6,7 +6,7 @@ import os
 import platform
 from datetime import datetime
 
-from flask import Flask, current_app
+from flask import Flask, current_app, request
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from werkzeug.exceptions import default_exceptions, Unauthorized
@@ -56,9 +56,10 @@ def insert_headers(response):
     :return: modified Flask response
     :rtype: flask.Response
     """
-    cors_url = current_app.config.get('CORS_URL')
-    if cors_url:
-        response.headers['Access-Control-Allow-Origin'] = cors_url
+    cors_origins = current_app.config.get('CORS_ORIGINS', [])
+    origin = request.headers.get('Origin')
+    if (origin and origin in cors_origins) or '*' in cors_origins:
+        response.headers['Access-Control-Allow-Origin'] = origin or '*'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         response.headers['Access-Control-Allow-Methods'] = 'DELETE, GET, OPTIONS, PATCH, POST'
     return response

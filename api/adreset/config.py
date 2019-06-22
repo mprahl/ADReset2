@@ -25,7 +25,7 @@ class Config(object):
     JWT_IDENTITY_CLAIM = 'sub'
     # Default the access tokens to expire after one hour
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-    CORS_URL = '*'
+    CORS_ORIGINS = []
     AD_USE_NTLM = True
     REQUIRED_ANSWERS = 3
     CASE_SENSITIVE_ANSWERS = False
@@ -44,6 +44,7 @@ class ProdConfig(Config):
 class DevConfig(Config):
     """The development ADReset application configuration."""
 
+    CORS_ORIGINS = ['*']
     SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(os.path.join(base_dir, 'adreset.db'))
     JSONIFY_PRETTYPRINT_REGULAR = True
 
@@ -51,6 +52,7 @@ class DevConfig(Config):
 class TestConfig(Config):
     """The test ADReset application configuration."""
 
+    CORS_ORIGINS = ['http://localhost']
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     TESTING = True
     # ldap3 mocking doesn't support NTLM
