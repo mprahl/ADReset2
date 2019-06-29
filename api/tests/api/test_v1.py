@@ -17,6 +17,7 @@ def test_about(client):
     """Test the /api/v1/about route."""
     rv = client.get('/api/v1/about')
     assert json.loads(rv.data.decode('utf-8')) == {
+        'account_status_enabled': True,
         'allow_duplicate_answers': False,
         'answers_minimum_length': 2,
         'required_answers': 3,
@@ -947,3 +948,25 @@ def test_reset_incorrect_answer(client, mock_ad):
         'message': 'One or more answers were incorrect. Please try again.',
         'status': 401
     }
+
+
+def test_account_status(client, mock_ad):
+    """Test the account-status route."""
+    rv = client.get('/api/v1/account-status/lockeduser')
+    assert rv.status_code == 200
+    assert json.loads(rv.data.decode('utf-8')) == {
+        'account_is_disabled': False,
+        'account_is_locked_out': True,
+        'account_is_unlocked_on': '2079-09-13T18:29:01+0000',
+        'password_can_be_set_on': None,
+        'password_expires_on': None,
+        'password_last_set_on': '2016-10-31T23:03:11+0000',
+        'password_never_expires': True
+    }
+
+
+def test_account_status_disabled(app, client, mock_ad):
+    """Test that the account-status route returns a 404 when disabled."""
+    with mock.patch.dict(app.config, {'ACCOUNT_STATUS_ENABLED': False}):
+        rv = client.get('/api/v1/account-status/lockeduser')
+    assert rv.status_code == 404

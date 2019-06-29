@@ -77,6 +77,7 @@ def about():
     :rtype: flask.Response
     """
     return jsonify({
+        'account_status_enabled': current_app.config['ACCOUNT_STATUS_ENABLED'],
         'allow_duplicate_answers': current_app.config['ALLOW_DUPLICATE_ANSWERS'],
         'answers_minimum_length': current_app.config['ANSWERS_MINIMUM_LENGTH'],
         'required_answers': current_app.config['REQUIRED_ANSWERS'],
@@ -476,3 +477,26 @@ def reset_password():
     ad.reset_password(username, new_password)
     log.info({'message': 'The user successfully reset their password', 'user': username})
     return jsonify({}), 204
+
+
+@api_v1.route('/account-status/<username>')
+def account_status(username):
+    """
+    Get general information about the account in the context of the domain.
+
+    :rtype: flask.Response
+    """
+    if current_app.config['ACCOUNT_STATUS_ENABLED'] is False:
+        raise NotFound()
+
+    ad = adreset.ad.AD()
+    ad.service_account_login()
+    status = ad.get_account_status(username)
+    if not status:
+        raise NotFound('The user was not found')
+
+    # Convert all the datetime objects to ISO 8601 strings
+    for key, value in status.items():
+        if isinstance(value, datetime):
+            status[key] = value.strftime('%Y-%m-%dT%H:%M:%S%z')
+    return jsonify(status)

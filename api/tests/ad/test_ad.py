@@ -2,6 +2,8 @@
 
 from __future__ import unicode_literals
 
+from datetime import datetime, timedelta, timezone
+
 import mock
 from mock import PropertyMock
 import pytest
@@ -42,10 +44,30 @@ def test_get_attribute(mock_ad):
     assert mock_ad.get_attribute('testuser2', 'userPrincipalName') == 'testuser2@adreset.local'
 
 
+def test_get_attributes(mock_ad):
+    """Test that AD.get_attributes returns the correct result."""
+    mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
+    rv = mock_ad.get_attributes('testuser2', ['primaryGroupID', 'userPrincipalName'])
+    assert rv == {
+        'primaryGroupID': 1607,
+        'userPrincipalName': 'testuser2@adreset.local',
+    }
+
+
 def test_get_domain_attribute(mock_ad):
     """Test that AD.get_domain_attribute returns the correct result."""
     mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
     assert mock_ad.get_domain_attribute('minPwdLength') == 7
+
+
+def test_get_domain_attributes(mock_ad):
+    """Test that AD.get_domain_attributes returns the correct result."""
+    mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
+    rv = mock_ad.get_domain_attributes(['distinguishedName', 'minPwdLength'])
+    assert rv == {
+        'distinguishedName': 'DC=adreset,DC=local',
+        'minPwdLength': 7,
+    }
 
 
 def test_get_min_pwd_length(mock_ad):
@@ -117,6 +139,66 @@ def test_reset_password(mock_ad):
     assert mock_ad.reset_password('lockedUser', 'NewP@ssw0rd') is None
     # We can verify that the lockoutTime was reset
     assert str(mock_ad.get_attribute('lockedUser', 'lockoutTime')) == '1601-01-01 00:00:00+00:00'
+
+
+def test_is_pwd_never_expires_set():
+    """Test the AD.is_pwd_never_expires_set method."""
+    assert adreset.ad.AD.is_pwd_never_expires_set(65537) is True
+    assert adreset.ad.AD.is_pwd_never_expires_set(3) is False
+
+
+def test_is_account_disabled():
+    """Test the AD.is_account_disabled method."""
+    assert adreset.ad.AD.is_account_disabled(66050) is True
+    assert adreset.ad.AD.is_account_disabled(66048) is False
+
+
+def test_get_unlock_date():
+    """Test the AD.get_unlock_date method."""
+    locked_datetime = datetime.now(timezone.utc)
+    lockout_duration = timedelta(minutes=30)
+    expected = locked_datetime + lockout_duration
+    assert adreset.ad.AD.get_unlock_date(locked_datetime, lockout_duration) == expected
+    unlocked_datetime = datetime(1601, 1, 1, 0, 0, tzinfo=timezone.utc)
+    assert adreset.ad.AD.get_unlock_date(unlocked_datetime, lockout_duration) is None
+
+
+def test_is_account_locked_out():
+    """Test the AD.is_account_locked_out method."""
+    locked_datetime = datetime.now(timezone.utc)
+    lockout_duration = timedelta(minutes=30)
+    assert adreset.ad.AD.is_account_locked_out(locked_datetime, lockout_duration) is True
+    unlocked_datetime = datetime(1601, 1, 1, 0, 0, tzinfo=timezone.utc)
+    assert adreset.ad.AD.is_account_locked_out(unlocked_datetime, lockout_duration) is False
+
+
+def test_get_pwd_expiration_date():
+    """Test the AD.get_pwd_expiration_date method."""
+    one_day = timedelta(days=1)
+    pwd_last_set = datetime(2019, 6, 30, 8, 27, 4, tzinfo=timezone.utc)
+    # Normal scenario
+    assert adreset.ad.AD.get_pwd_expiration_date(one_day, pwd_last_set, 3) == pwd_last_set + one_day
+    # The domain doesn't expire passwords
+    assert adreset.ad.AD.get_pwd_expiration_date(timedelta.max, pwd_last_set, 3) is None
+    # The account's password never expires
+    assert adreset.ad.AD.get_pwd_expiration_date(one_day, pwd_last_set, 65537) is None
+    # The account's pwdLastSet LDAP attribute is 0
+    assert adreset.ad.AD.get_pwd_expiration_date(one_day, adreset.ad.AD.min_filetime, 3) is None
+
+
+def test_get_account_status(mock_ad):
+    """Test the AD.get_account_status method."""
+    mock_ad.login('CN=testuser,OU=ADReset,DC=adreset,DC=local', 'P@ssW0rd')
+    expected = {
+        'account_is_disabled': False,
+        'account_is_locked_out': True,
+        'account_is_unlocked_on': datetime(2079, 9, 13, 18, 29, 1, 68966, tzinfo=timezone.utc),
+        'password_can_be_set_on': None,
+        'password_expires_on': None,
+        'password_last_set_on': datetime(2016, 10, 31, 23, 3, 11, 741022, tzinfo=timezone.utc),
+        'password_never_expires': True
+    }
+    assert mock_ad.get_account_status('lockeduser') == expected
 
 
 class MockLDAPConnection(object):

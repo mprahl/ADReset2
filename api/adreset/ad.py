@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 
+from datetime import datetime, timedelta, timezone
 import re
 
 import ldap3
@@ -16,6 +17,9 @@ from adreset import log
 class AD(object):
     """Abstract the Active Directory tasks for the app."""
 
+    # Active Directory stores timestamps in "filetime". When the value is zero in Active Directory,
+    # that is the equivalent of January 1st, 1601.
+    min_filetime = datetime(1601, 1, 1, tzinfo=timezone.utc)
     unknown_error_msg = ('An unknown issue was encountered. Please contact the administrator for '
                          'help.')
     failed_search_error = ('An error occured while searching Active Directory. Please contact the '
@@ -211,6 +215,47 @@ class AD(object):
         if raise_exc:
             raise ADError(self.failed_search_error)
 
+    def _get_attributes(self, search_filter, attributes):
+        """
+        Get the attributes of the first LDAP object returned from the search filter.
+
+        :param str search_filter: the LDAP search filter to use
+        :param list attributes: the attributes from the domain to search for
+        :rtype: dict
+        :return: the dictionary of attributes, where the keys are the attribute names and
+            the values are the attribute values
+        """
+        results = self.search(search_filter, attributes)
+
+        if 'attributes' in results[0]:
+            return {
+                attribute: results[0]['attributes'][attribute]
+                for attribute in attributes
+            }
+
+        return {}
+
+    def get_attributes(self, sam_account_name, attributes):
+        """
+        Get an LDAP attribute from the object.
+
+        :param str sam_account_name: the sAMAccountName of the LDAP object to search for
+        :param list attributes: the list of attributes of the LDAP object to search for
+        :rtype: dict
+        :return: the dictionary of attributes, where the keys are the attribute names and
+            the values are the attribute values
+        """
+        search_filter = '(sAMAccountName={0})'.format(sam_account_name)
+        result = self._get_attributes(search_filter, attributes)
+        if not result:
+            self.log(
+                'error',
+                'The LDAP attribute(s) {0} for "{1}" couldn\'t be found'
+                .format(', '.join(attributes), sam_account_name)
+            )
+
+        return result
+
     def get_attribute(self, sam_account_name, attribute):
         """
         Get an LDAP attribute from the object.
@@ -220,13 +265,27 @@ class AD(object):
         :rtype: any
         :return: the attribute of the LDAP object
         """
-        search_filter = '(sAMAccountName={0})'.format(sam_account_name)
-        results = self.search(search_filter, attributes=[attribute])
-        if 'attributes' in results[0]:
-            return results[0]['attributes'][attribute]
-        else:
-            self.log('error', 'The LDAP attribute "{0}" on the "{1}" wasn\'t found'.format(
-                attribute, sam_account_name))
+        return self.get_attributes(sam_account_name, [attribute]).get(attribute)
+
+    def get_domain_attributes(self, attributes):
+        """
+        Get LDAP attributes from the domain.
+
+        :param list attributes: the attributes from the domain to search for
+        :rtype: dict
+        :return: the dictionary of domain attributes, where the keys are the attribute names and
+            the values are the attribute values
+        """
+        search_filter = '(&(objectClass=domainDNS))'
+        result = self._get_attributes(search_filter, attributes)
+        if not result:
+            self.log(
+                'error',
+                'The LDAP attribute(s) {0} on the domain couldn\'t be found'
+                .format(', '.join(attributes))
+            )
+
+        return result
 
     def get_domain_attribute(self, attribute):
         """
@@ -236,14 +295,7 @@ class AD(object):
         :rtype: any
         :return: the domain attribute
         """
-        search_filter = '(&(objectClass=domainDNS))'
-        results = self.search(search_filter, [attribute])
-
-        if 'attributes' in results[0]:
-            return results[0]['attributes'][attribute]
-        else:
-            self.log('error', 'The LDAP attribute "{0}" on the domain wasn\'t found'.format(
-                attribute))
+        return self.get_domain_attributes([attribute]).get(attribute)
 
     def get_guid(self, sam_account_name):
         """
@@ -420,3 +472,163 @@ class AD(object):
         admin_group = self._get_config('AD_ADMINS_GROUP')
         sam_account_name = self.get_sam_account_name(user_guid)
         return self.check_group_membership(sam_account_name, admin_group)
+
+    @staticmethod
+    def is_pwd_never_expires_set(user_account_control):
+        """
+        Determine if the "password never expires" flag is set.
+
+        :param int user_account_control: the userAccountControl LDAP attribute value of the user
+        :return: a boolean determining if the "password never expires" flag is set
+        :rtype: bool
+        """
+        # See https://support.microsoft.com/en-us/help/305144/how-to-use-useraccountcontrol-to-manipulate-user-account-properties # noqa: E501
+        return (user_account_control & 65536) == 65536
+
+    @staticmethod
+    def is_account_disabled(user_account_control):
+        """
+        Determine if the account is disabled.
+
+        :param int user_account_control: the userAccountControl LDAP attribute value of the user
+        :return: a boolean determining if the account is disabled
+        :rtype: bool
+        """
+        # See https://support.microsoft.com/en-us/help/305144/how-to-use-useraccountcontrol-to-manipulate-user-account-properties # noqa: E501
+        return (user_account_control & 2) == 2
+
+    @staticmethod
+    def is_account_locked_out(lockout_time, lockout_duration):
+        """
+        Determine if the account is locked out.
+
+        :param datetime.datetime lockout_time: the datetime representation of the lockoutTime
+            LDAP attribute
+        :param datetime.datetime lockout_duration: the timedelta representation of the
+            lockoutDuration LDAP attribute
+        :return: a boolean determining if the account is locked out
+        :rtype: bool
+        """
+        # If password lockouts are disabled on the domain, this can be falsey
+        if not lockout_time:
+            return False
+
+        return lockout_time + lockout_duration > datetime.now(timezone.utc)
+
+    @staticmethod
+    def get_unlock_date(lockout_time, lockout_duration):
+        """
+        Determine when the account will be unlocked.
+
+        None is returned when the account is not locked out.
+
+        :param datetime.datetime lockout_time: the datetime representation of the lockoutTime
+            LDAP attribute
+        :param datetime.datetime lockout_duration: the timedelta representation of the
+            lockoutDuration LDAP attribute
+        :return: the datetime of when the user's account will be unlocked
+        :rtype: datetime.datetime or None
+        """
+        if AD.is_account_locked_out(lockout_time, lockout_duration):
+            return lockout_time + lockout_duration
+
+    @staticmethod
+    def get_pwd_expiration_date(max_pwd_age, pwd_last_set, user_account_control):
+        """
+        Determine when the user's password expires.
+
+        When None is returned, it can mean a few things. It can mean the pwdLastSet LDAP attribute
+        is not set. This usually means an Active Directory administrator set the password to expire
+        at next logon. It can also mean the domain doesn't expire passwords, or the user has their
+        password set to never expire.
+
+        :param datetime.timedelta max_pwd_age: the timedelta representation of the maxPwdAge
+            LDAP attribute of the domain
+        :param datetime.datetime pwd_last_set: the datetime representation of the pwdLastSet LDAP
+            attribute of the user
+        :param int user_account_control: the userAccountControl LDAP attribute value of the user
+        :return: the datetime of when the user's password expires
+        :rtype: datetime.datetime or None
+        """
+        # TODO: `max_pwd_age == timedelta.max` relies on:
+        # https://github.com/cannatag/ldap3/pull/708
+        if (
+            max_pwd_age == timedelta.max
+            or pwd_last_set == AD.min_filetime
+            or AD.is_pwd_never_expires_set(user_account_control)
+        ):
+            return None
+
+        return pwd_last_set + max_pwd_age
+
+    @staticmethod
+    def get_when_pwd_can_be_set(min_pwd_age, pwd_last_set):
+        """
+        Determine when the user's password can be set next.
+
+        When None is returned, it means the password can be set now.
+
+        :param datetime.timedelta min_pwd_age: the timedelta representation of the minPwdAge
+            LDAP attribute of the domain
+        :param datetime.datetime pwd_last_set: the datetime representation of the pwdLastSet LDAP
+            attribute of the user
+        :return: the datetime of when the user's password can be set next
+        :rtype: datetime.datetime
+        """
+        if min_pwd_age == timedelta(0):
+            return None
+
+        when = pwd_last_set + min_pwd_age
+        if when < datetime.now(timezone.utc):
+            return None
+
+        return when
+
+    def get_account_status(self, sam_account_name):
+        """
+        Get general information about the account in the context of the domain.
+
+        If the user can't be found in LDAP, None is returned.
+
+        :param str sam_account_name: the sAMAccountName of the LDAP object to search for
+        :return: a dictionary with general information about the account or None
+        :rtype: dict or None
+        """
+        self.log('info', 'Getting the account status for {}'.format(sam_account_name))
+        domain_attributes = self.get_domain_attributes(
+            ['lockoutDuration', 'maxPwdAge', 'minPwdAge', 'minPwdLength', 'pwdProperties'],
+        )
+        user_attributes = self.get_attributes(
+            sam_account_name,
+            ['lockoutTime', 'pwdLastSet', 'userAccountControl'],
+        )
+        if not user_attributes:
+            return
+
+        last_set = user_attributes['pwdLastSet']
+        if last_set == AD.min_filetime:
+            last_set = None
+
+        uac = user_attributes['userAccountControl']
+        return {
+            'account_is_disabled': self.is_account_disabled(uac),
+            'account_is_locked_out': self.is_account_locked_out(
+                user_attributes['lockoutTime'],
+                domain_attributes['lockoutDuration'],
+            ),
+            'account_is_unlocked_on': self.get_unlock_date(
+                user_attributes['lockoutTime'],
+                domain_attributes['lockoutDuration'],
+            ),
+            'password_can_be_set_on': self.get_when_pwd_can_be_set(
+                domain_attributes['minPwdAge'],
+                user_attributes['pwdLastSet'],
+            ),
+            'password_expires_on': self.get_pwd_expiration_date(
+                domain_attributes['maxPwdAge'],
+                user_attributes['pwdLastSet'],
+                uac,
+            ),
+            'password_last_set_on': last_set,
+            'password_never_expires': self.is_pwd_never_expires_set(uac),
+        }

@@ -729,6 +729,7 @@
                 "instanceType": 4,
                 "lastLogoff": "1601-01-01 00:00:00+00:00",
                 "lastLogon": "1601-01-01 00:00:00+00:00",
+                "lockoutTime": "2079-09-13T17:59:01+00:00",
                 "logonCount": 0,
                 "memberOf": [
                     "CN=ADReset Users,OU=Groups,DC=adreset,DC=local"
@@ -797,6 +798,9 @@
                 ],
                 "lastLogon": [
                     "0"
+                ],
+                "lockoutTime": [
+                    "151063271410689679"
                 ],
                 "logonCount": [
                     "0"

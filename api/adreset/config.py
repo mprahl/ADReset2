@@ -33,6 +33,7 @@ class Config(object):
     ANSWERS_MINIMUM_LENGTH = 2
     LOCKOUT_MINUTES = 15
     ATTEMPTS_BEFORE_LOCKOUT = 3
+    ACCOUNT_STATUS_ENABLED = True
 
 
 class ProdConfig(Config):
