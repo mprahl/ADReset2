@@ -2,14 +2,12 @@
 import React, { Component } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import {
-  Button,
   Card,
   CardBody,
   CardHeader,
   CardText,
   CardTitle,
   Container,
-  Tooltip,
 } from 'reactstrap';
 import { PropTypes } from 'prop-types';
 
@@ -31,13 +29,6 @@ class Home extends Component {
     role: null,
   };
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      tooltipOpenings: {},
-    };
-  }
-
   toggle = e => {
     const btnID = e.target.id;
     this.setState(oldState => {
@@ -52,31 +43,6 @@ class Home extends Component {
     if (role === 'admin') {
       return <Redirect to="/configure-questions/1" />;
     }
-
-    const disabledButtons = [];
-    ['Change Password', 'Reset With Email'].forEach((text, i) => {
-      disabledButtons.push(
-        // eslint-disable-next-line react/no-array-index-key
-        <React.Fragment key={i}>
-          <Button
-            style={cardLinkStyle}
-            className="btn btn-primary disabled"
-            id={`disabled${i + 1}`}
-          >
-            {text}
-          </Button>
-          <Tooltip
-            delay={{ show: 0, hide: 0 }}
-            placement="top"
-            isOpen={this.state.tooltipOpenings[`disabled${i + 1}`]}
-            target={`disabled${i + 1}`}
-            toggle={this.toggle}
-          >
-            This functionality is disabled by your administrator
-          </Tooltip>
-        </React.Fragment>,
-      );
-    });
 
     return (
       <Container>
@@ -112,11 +78,8 @@ class Home extends Component {
                   >
                     Reset With Questions
                   </Link>
-                  {disabledButtons}
                 </React.Fragment>
-              ) : (
-                ''
-              )}
+              ) : null}
             </div>
           </CardBody>
         </Card>
