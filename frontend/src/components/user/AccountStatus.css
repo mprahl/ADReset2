@@ -1,0 +1,20 @@
+.status-btn {
+  margin-top: 1rem;
+}
+
+
+@media (min-width: 576px) {
+  .status-username-input {
+    margin-right: 1rem;
+  }
+
+  .status-btn {
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .status-username-input {
+    width: 400px !important;
+  }
+}

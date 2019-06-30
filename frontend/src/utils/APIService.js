@@ -123,6 +123,10 @@ class APIService {
     };
     return this.authService.apiCall('/reset', axiosConfig);
   }
+
+  getAccountStatus(username) {
+    return this.authService.apiCall(`/account-status/${username}`);
+  }
 }
 
 export default APIService;

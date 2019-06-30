@@ -18,12 +18,14 @@ import logo from '../../imgs/logo.png';
 
 class Navigation extends Component {
   static propTypes = {
+    about: PropTypes.object,
     history: PropTypes.object.isRequired,
     loggedIn: PropTypes.bool.isRequired,
     role: PropTypes.string,
   };
 
   static defaultProps = {
+    about: {},
     role: null,
   };
 
@@ -85,7 +87,7 @@ class Navigation extends Component {
   }
 
   render() {
-    const { loggedIn, role } = this.props;
+    const { about, loggedIn, role } = this.props;
     const links = [];
     if (role === 'admin') {
       links.push(
@@ -104,6 +106,14 @@ class Navigation extends Component {
       links.push(
         <NavLink tag={Link} to="/set-answers">
           Set Answers
+        </NavLink>,
+      );
+    }
+
+    if (about.account_status_enabled === true) {
+      links.push(
+        <NavLink tag={Link} to="/account-status">
+          Status
         </NavLink>,
       );
     }

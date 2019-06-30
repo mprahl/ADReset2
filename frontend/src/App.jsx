@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import AccountStatus from './components/user/AccountStatus';
 import Navigation from './components/common/Navigation';
 import Home from './components/Home';
 import Login from './components/Login';
@@ -99,10 +100,14 @@ class App extends Component {
     return (
       <BrowserRouter>
         <React.Fragment>
-          <Navigation loggedIn={loggedIn} role={role} />
+          <Navigation about={about || {}} loggedIn={loggedIn} role={role} />
           {loading === false && fatalError === false ? (
             <Switch>
-              <Route exact path="/" component={() => <Home loggedIn={loggedIn} role={role} />} />
+              <Route
+                exact
+                path="/"
+                component={() => <Home about={about || {}} loggedIn={loggedIn} role={role} />}
+              />
               <Route
                 exact
                 path="/login"
@@ -154,10 +159,15 @@ class App extends Component {
                   />
                 )}
               />
+              {about.account_status_enabled === true ? (
+                <Route
+                  exact
+                  path="/account-status/:username?"
+                  component={() => <AccountStatus about={about} displayToast={this.displayToast} />}
+                />
+              ) : null}
             </Switch>
-          ) : (
-            ''
-          )}
+          ) : null}
           <ToastContainer hideProgressBar={false} />
           {loading ? <Spinner /> : ''}
         </React.Fragment>

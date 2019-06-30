@@ -21,11 +21,13 @@ const cardLinkStyle = {
 
 class Home extends Component {
   static propTypes = {
+    about: PropTypes.object,
     loggedIn: PropTypes.bool.isRequired,
     role: PropTypes.string,
   };
 
   static defaultProps = {
+    about: {},
     role: null,
   };
 
@@ -39,7 +41,7 @@ class Home extends Component {
   };
 
   render() {
-    const { loggedIn, role } = this.props;
+    const { about, loggedIn, role } = this.props;
     if (role === 'admin') {
       return <Redirect to="/configure-questions/1" />;
     }
@@ -66,6 +68,12 @@ class Home extends Component {
                 password and desired new password. To do so, click on &quot;Change Password&quot;.
               </CardText>
               <CardText style={{ marginTop: '2rem' }}>Please select an option below:</CardText>
+              {about.account_status_enabled === true ? (
+                <Link style={cardLinkStyle} className="btn btn-primary" to="/account-status">
+                  Account Status
+                </Link>
+              ) : null}
+
               <Link style={cardLinkStyle} className="btn btn-primary" to="/set-answers">
                 Set Questions
               </Link>
