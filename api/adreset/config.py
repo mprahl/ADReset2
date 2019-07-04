@@ -60,7 +60,7 @@ class TestConfig(Config):
     AD_USE_NTLM = False
     AD_DOMAIN = 'adreset.local'
     AD_LDAP_URI = 'ldaps://server.domain.local:636'
-    AD_USERS_GROUP = 'ADReset Users'
-    AD_ADMINS_GROUP = 'ADReset Admins'
+    AD_USER_GROUPS = ['ADReset Users']
+    AD_ADMIN_GROUPS = ['ADReset Admins']
     AD_SERVICE_USERNAME = 'CN=testuser,OU=ADReset,DC=adreset,DC=local'
     AD_SERVICE_PASSWORD = 'P@ssw0rd'

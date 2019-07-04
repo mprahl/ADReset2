@@ -457,9 +457,9 @@ class AD(object):
         :return: a boolean determining if the user is a regular user
         :rtype: bool
         """
-        user_group = self._get_config('AD_USERS_GROUP')
+        user_groups = self._get_config('AD_USER_GROUPS')
         sam_account_name = self.get_sam_account_name(user_guid)
-        return self.check_group_membership(sam_account_name, user_group)
+        return any(self.check_group_membership(sam_account_name, group) for group in user_groups)
 
     def check_admin_group_membership(self, user_guid):
         """
@@ -469,9 +469,9 @@ class AD(object):
         :return: a boolean determining if the user is an admin
         :rtype: bool
         """
-        admin_group = self._get_config('AD_ADMINS_GROUP')
+        admin_groups = self._get_config('AD_ADMIN_GROUPS')
         sam_account_name = self.get_sam_account_name(user_guid)
-        return self.check_group_membership(sam_account_name, admin_group)
+        return any(self.check_group_membership(sam_account_name, group) for group in admin_groups)
 
     @staticmethod
     def is_pwd_never_expires_set(user_account_control):
