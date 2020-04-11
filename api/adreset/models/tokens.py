@@ -11,8 +11,7 @@ class BlacklistedToken(db.Model):
     """Contain issued JSON web tokens."""
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     jti = db.Column(db.String(36), nullable=False)
     expires = db.Column(db.DateTime, nullable=False)
 
@@ -25,9 +24,7 @@ class BlacklistedToken(db.Model):
         """
         user = User.query.filter_by(ad_guid=token['sub']['guid']).one()
         db_token = BlacklistedToken(
-            jti=token['jti'],
-            user_id=user.id,
-            expires=datetime.fromtimestamp(token['exp'])
+            jti=token['jti'], user_id=user.id, expires=datetime.fromtimestamp(token['exp'])
         )
         db.session.add(db_token)
         db.session.commit()

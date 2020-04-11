@@ -20,10 +20,13 @@ class AD(object):
     # Active Directory stores timestamps in "filetime". When the value is zero in Active Directory,
     # that is the equivalent of January 1st, 1601.
     min_filetime = datetime(1601, 1, 1, tzinfo=timezone.utc)
-    unknown_error_msg = ('An unknown issue was encountered. Please contact the administrator for '
-                         'help.')
-    failed_search_error = ('An error occured while searching Active Directory. Please contact the '
-                           'administrator for help.')
+    unknown_error_msg = (
+        'An unknown issue was encountered. Please contact the administrator for help.'
+    )
+    failed_search_error = (
+        'An error occured while searching Active Directory. Please contact the '
+        'administrator for help.'
+    )
 
     def __init__(self):
         """Initialize the AD class."""
@@ -63,7 +66,8 @@ class AD(object):
         :raises ConfigurationError: if the configuration item isn't set or is invalid
         """
         config_error = ConfigurationError(
-            'The application has a configuration error. Ask the administrator to check the logs.')
+            'The application has a configuration error. Ask the administrator to check the logs.'
+        )
         if config_name in current_app.config:
             config = current_app.config[config_name]
         else:
@@ -195,16 +199,20 @@ class AD(object):
         """
         if not self.connection.bound:
             raise ADError('You must be logged into LDAP to search')
-        msg = ('Searching Active Directory with "{0}" and the following attributes: {1}'
-               .format(search_filter, ', '.join(attributes or [])))
+        msg = 'Searching Active Directory with "{0}" and the following attributes: {1}'.format(
+            search_filter, ', '.join(attributes or [])
+        )
         self.log('debug', msg)
 
         try:
             search_succeeded = self.connection.search(
-                self.base_dn, search_filter, search_scope=search_scope, attributes=attributes)
+                self.base_dn, search_filter, search_scope=search_scope, attributes=attributes
+            )
         except ldap3.core.exceptions.LDAPAttributeError:
-            msg = ('An invalid LDAP attribute was requested when searching for "{0}" with '
-                   'attributes: {1}').format(search_filter, ', '.join(attributes))
+            msg = (
+                'An invalid LDAP attribute was requested when searching for "{0}" with '
+                'attributes: {1}'
+            ).format(search_filter, ', '.join(attributes))
             self.log('error', msg, exc_info=True)
             raise ADError(self.failed_search_error)
 
@@ -228,10 +236,7 @@ class AD(object):
         results = self.search(search_filter, attributes)
 
         if 'attributes' in results[0]:
-            return {
-                attribute: results[0]['attributes'][attribute]
-                for attribute in attributes
-            }
+            return {attribute: results[0]['attributes'][attribute] for attribute in attributes}
 
         return {}
 
@@ -250,8 +255,9 @@ class AD(object):
         if not result:
             self.log(
                 'error',
-                'The LDAP attribute(s) {0} for "{1}" couldn\'t be found'
-                .format(', '.join(attributes), sam_account_name)
+                'The LDAP attribute(s) {0} for "{1}" couldn\'t be found'.format(
+                    ', '.join(attributes), sam_account_name
+                ),
             )
 
         return result
@@ -281,8 +287,9 @@ class AD(object):
         if not result:
             self.log(
                 'error',
-                'The LDAP attribute(s) {0} on the domain couldn\'t be found'
-                .format(', '.join(attributes))
+                'The LDAP attribute(s) {0} on the domain couldn\'t be found'.format(
+                    ', '.join(attributes)
+                ),
             )
 
         return result
@@ -336,7 +343,8 @@ class AD(object):
         else:
             self.log(
                 'error',
-                'The user with the GUID {0} couldn\'t be found in Active Directory'.format(guid))
+                'The user with the GUID {0} couldn\'t be found in Active Directory'.format(guid),
+            )
             raise ADError('The user couldn\'t be found in Active Directory')
 
     @property
@@ -409,10 +417,12 @@ class AD(object):
             raise ValidationError(
                 'The password did not match the complexity requirements. Please ensure your '
                 'password contains at least three of the four requirements: lowercase letters, '
-                'uppercase letters, numbers, and special charcters.')
+                'uppercase letters, numbers, and special charcters.'
+            )
         elif not self.match_min_pwd_length(new_password):
-            raise ValidationError('The password must be at least {0} characters long'.format(
-                self.min_pwd_length))
+            raise ValidationError(
+                'The password must be at least {0} characters long'.format(self.min_pwd_length)
+            )
         dn = self.get_dn(sam_account_name)
         self.connection.extend.microsoft.modify_password(dn, new_password, old_password=None)
         self.connection.extend.microsoft.unlock_account(dn)
@@ -429,11 +439,13 @@ class AD(object):
         """
         group_dn = self.get_dn(group)
         # Start by seeing if the user is part of a nested group membership
-        search_filter = ('(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:={0}))'
-                         .format(group_dn))
+        search_filter = '(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:={0}))'.format(
+            group_dn
+        )
         results = self.search(search_filter, attributes=['sAMAccountName'])
         members = set(
-            [user['attributes']['sAMAccountName'] for user in results if user.get('attributes')])
+            [user['attributes']['sAMAccountName'] for user in results if user.get('attributes')]
+        )
         if sam_account_name in members:
             return True
 
@@ -442,7 +454,8 @@ class AD(object):
         primary_group_id = self.get_attribute(sam_account_name, 'primaryGroupID')
         domain_sid = self.get_domain_attribute('objectSid')
         search_filter = '(&(objectClass=group)(objectSid={0}-{1}))'.format(
-            domain_sid, primary_group_id)
+            domain_sid, primary_group_id
+        )
         results = self.search(search_filter, attributes=['distinguishedName'])
         if 'attributes' in results[0] and results[0]['attributes']['distinguishedName'] == group_dn:
             return True
@@ -599,8 +612,7 @@ class AD(object):
             ['lockoutDuration', 'maxPwdAge', 'minPwdAge', 'minPwdLength', 'pwdProperties'],
         )
         user_attributes = self.get_attributes(
-            sam_account_name,
-            ['lockoutTime', 'pwdLastSet', 'userAccountControl'],
+            sam_account_name, ['lockoutTime', 'pwdLastSet', 'userAccountControl'],
         )
         if not user_attributes:
             return
@@ -613,21 +625,16 @@ class AD(object):
         return {
             'account_is_disabled': self.is_account_disabled(uac),
             'account_is_locked_out': self.is_account_locked_out(
-                user_attributes['lockoutTime'],
-                domain_attributes['lockoutDuration'],
+                user_attributes['lockoutTime'], domain_attributes['lockoutDuration'],
             ),
             'account_is_unlocked_on': self.get_unlock_date(
-                user_attributes['lockoutTime'],
-                domain_attributes['lockoutDuration'],
+                user_attributes['lockoutTime'], domain_attributes['lockoutDuration'],
             ),
             'password_can_be_set_on': self.get_when_pwd_can_be_set(
-                domain_attributes['minPwdAge'],
-                user_attributes['pwdLastSet'],
+                domain_attributes['minPwdAge'], user_attributes['pwdLastSet'],
             ),
             'password_expires_on': self.get_pwd_expiration_date(
-                domain_attributes['maxPwdAge'],
-                user_attributes['pwdLastSet'],
-                uac,
+                domain_attributes['maxPwdAge'], user_attributes['pwdLastSet'], uac,
             ),
             'password_last_set_on': last_set,
             'password_never_expires': self.is_pwd_never_expires_set(uac),

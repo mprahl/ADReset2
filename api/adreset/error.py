@@ -33,10 +33,7 @@ def json_error(error):
     :rtype: flask.Response
     """
     if isinstance(error, HTTPException):
-        response = jsonify({
-            'status': error.code,
-            'message': error.description
-        })
+        response = jsonify({'status': error.code, 'message': error.description})
         response.status_code = error.code
     else:
         status_code = 500
@@ -44,9 +41,6 @@ def json_error(error):
         if isinstance(error, ValidationError):
             status_code = 400
 
-        response = jsonify({
-            'status': status_code,
-            'message': message or str(error)
-        })
+        response = jsonify({'status': status_code, 'message': message or str(error)})
         response.status_code = status_code
     return response

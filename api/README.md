@@ -61,3 +61,6 @@ Add two integers together.
 :rtype: int
 :raises ValueError: if the input values aren't integers
 ```
+
+Additionally, [black](https://github.com/psf/black) is used to enforce other coding standards except
+for quote normalization.

@@ -77,8 +77,11 @@ class User(db.Model):
         """
         lockout_mins = current_app.config['LOCKOUT_MINUTES']
         lockout_datetime = datetime.utcnow() - timedelta(minutes=lockout_mins)
-        failed_attempts = (db.session.query(func.count(FailedAttempt.id))).filter(
-            FailedAttempt.time >= lockout_datetime).scalar()
+        failed_attempts = (
+            db.session.query(func.count(FailedAttempt.id))
+            .filter(FailedAttempt.time >= lockout_datetime)
+            .scalar()
+        )
         return failed_attempts >= current_app.config['ATTEMPTS_BEFORE_LOCKOUT']
 
     def is_locked_out(self):

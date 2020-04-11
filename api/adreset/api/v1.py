@@ -14,7 +14,14 @@ from sqlalchemy import func
 from adreset import version, log
 from adreset.error import ValidationError
 import adreset.ad
-from adreset.models import db, User, BlacklistedToken, Question, Answer, FailedAttempt
+from adreset.models import (
+    Answer,
+    db,
+    BlacklistedToken,
+    FailedAttempt,
+    Question,
+    User,
+)
 from adreset.api.decorators import paginate, admin_required, user_required
 
 
@@ -76,13 +83,15 @@ def about():
 
     :rtype: flask.Response
     """
-    return jsonify({
-        'account_status_enabled': current_app.config['ACCOUNT_STATUS_ENABLED'],
-        'allow_duplicate_answers': current_app.config['ALLOW_DUPLICATE_ANSWERS'],
-        'answers_minimum_length': current_app.config['ANSWERS_MINIMUM_LENGTH'],
-        'required_answers': current_app.config['REQUIRED_ANSWERS'],
-        'version': version
-    })
+    return jsonify(
+        {
+            'account_status_enabled': current_app.config['ACCOUNT_STATUS_ENABLED'],
+            'allow_duplicate_answers': current_app.config['ALLOW_DUPLICATE_ANSWERS'],
+            'answers_minimum_length': current_app.config['ANSWERS_MINIMUM_LENGTH'],
+            'required_answers': current_app.config['REQUIRED_ANSWERS'],
+            'version': version,
+        }
+    )
 
 
 @api_v1.route('/login', methods=['POST'])
@@ -171,8 +180,11 @@ def add_question():
     if 'enabled' in req_json:
         _validate_api_input(req_json, 'enabled', bool)
 
-    exists = bool((db.session.query(func.count(Question.question))).filter_by(
-        question=req_json['question']).scalar())
+    exists = bool(
+        db.session.query(func.count(Question.question))
+        .filter_by(question=req_json['question'])
+        .scalar()
+    )
     if exists:
         raise ValidationError('The supplied question already exists')
 
@@ -195,8 +207,11 @@ def patch_question(question_id):
     req_json = request.get_json(force=True)
     valid_keys = set(['question', 'enabled'])
     if not valid_keys.issuperset(set(req_json.keys())):
-        raise ValidationError('Invalid keys were supplied. Please use the following keys: {0}'
-                              .format(', '.join(sorted(valid_keys))))
+        raise ValidationError(
+            'Invalid keys were supplied. Please use the following keys: {0}'.format(
+                ', '.join(sorted(valid_keys))
+            )
+        )
 
     question = Question.query.get(question_id)
     if not question:
@@ -289,15 +304,21 @@ def add_answers():
     user_id = db.session.query(User.id).filter_by(ad_guid=user_ad_guid).scalar()
     username = get_jwt_identity()['username']
     # Make sure the user hasn't already set the required amount of secret answers
-    num_answers_in_db = \
+    num_answers_in_db = (
         (db.session.query(func.count(Answer.answer))).filter_by(user_id=user_id).scalar()
+    )
     if num_answers_in_db != 0:
-        log.debug({
-            'message': 'The user attempted to set their secret answers but had them already set',
-            'user': username,
-        })
+        log.debug(
+            {
+                'message': (
+                    'The user attempted to set their secret answers but had them already set'
+                ),
+                'user': username,
+            }
+        )
         raise ValidationError(
-            'You\'ve previously set your secret answers. Please reset them to set them again.')
+            'You\'ve previously set your secret answers. Please reset them to set them again.'
+        )
 
     req_json = copy.deepcopy(request.get_json(force=True))
     if not isinstance(req_json, list):
@@ -312,10 +333,11 @@ def add_answers():
             error_prefix = '1 answer was'
         else:
             error_prefix = '{0} answers were'.format(num_answers)
-        raise ValidationError('{0} supplied but {1} are required'.format(
-            error_prefix,
-            current_app.config['REQUIRED_ANSWERS']
-        ))
+        raise ValidationError(
+            '{0} supplied but {1} are required'.format(
+                error_prefix, current_app.config['REQUIRED_ANSWERS']
+            )
+        )
 
     question_ids = set()
     answer_strings = set()
@@ -324,15 +346,21 @@ def add_answers():
         _validate_api_input(answer, 'question_id', int)
         # Verify the answers meet the length requirements
         if len(answer['answer']) < current_app.config['ANSWERS_MINIMUM_LENGTH']:
-            log.info({
-                'message': 'The user supplied an answer of length {0}, but {1} is required'.format(
-                    len(answer['answer']),
+            log.info(
+                {
+                    'message': (
+                        'The user supplied an answer of length {0}, but {1} is required'.format(
+                            len(answer['answer']), current_app.config['ANSWERS_MINIMUM_LENGTH']
+                        )
+                    ),
+                    'user': username,
+                }
+            )
+            raise ValidationError(
+                'The answer must be at least {0} characters long'.format(
                     current_app.config['ANSWERS_MINIMUM_LENGTH']
-                ),
-                'user': username,
-            })
-            raise ValidationError('The answer must be at least {0} characters long'.format(
-                current_app.config['ANSWERS_MINIMUM_LENGTH']))
+                )
+            )
 
         # If answers aren't stored as case-sensitive, then convert it to lowercase
         if current_app.config['CASE_SENSITIVE_ANSWERS'] is False:
@@ -347,7 +375,8 @@ def add_answers():
         elif question.enabled is False:
             log.info({'message': 'The user tried to use a disabled question', 'user': username})
             raise ValidationError(
-                'The "question_id" of {0} is to a disabled question'.format(question.id))
+                'The "question_id" of {0} is to a disabled question'.format(question.id)
+            )
 
         # Store these in sets to check duplicates
         question_ids.add(answer['question_id'])
@@ -357,7 +386,8 @@ def add_answers():
     if len(question_ids) != num_answers:
         log.info({'message': 'The user supplied duplicate questions', 'user': username})
         raise ValidationError(
-            'One or more questions were the same. Please provide unique questions.')
+            'One or more questions were the same. Please provide unique questions.'
+        )
 
     # If duplicate answers aren't allowed, then verify the answers are unique
     allow_dup_answers = current_app.config['ALLOW_DUPLICATE_ANSWERS']
@@ -370,7 +400,8 @@ def add_answers():
     for answer in req_json:
         hashed_answer = Answer.hash_answer(answer['answer'])
         answer_obj = Answer(
-            answer=hashed_answer, question_id=answer['question_id'], user_id=user_id)
+            answer=hashed_answer, question_id=answer['question_id'], user_id=user_id
+        )
         db.session.add(answer_obj)
         answer_objects.append(answer_obj)
     db.session.commit()
@@ -396,8 +427,9 @@ def reset_password():
     new_password = req_json['new_password']
     username = req_json['username']
 
-    not_setup_msg = ('You must have configured at least {0} secret answers before resetting your '
-                     'password').format(current_app.config['REQUIRED_ANSWERS'])
+    not_setup_msg = (
+        'You must have configured at least {0} secret answers before resetting your ' 'password'
+    ).format(current_app.config['REQUIRED_ANSWERS'])
     # Verify the user exists in the database
     ad = adreset.ad.AD()
     ad.service_account_login()
@@ -422,8 +454,10 @@ def reset_password():
 
     # Make sure the user has all their answers configured
     if len(q_id_to_answer_db.keys()) != current_app.config['REQUIRED_ANSWERS']:
-        msg = ('The user did not have their secret answers configured and attempted to reset their '
-               'password')
+        msg = (
+            'The user did not have their secret answers configured and attempted to reset their '
+            'password'
+        )
         log.debug({'message': msg, 'user': username})
         raise ValidationError(not_setup_msg)
 
@@ -431,24 +465,33 @@ def reset_password():
     for answer in answers:
         if not isinstance(answer, dict) or 'question_id' not in answer or 'answer' not in answer:
             raise ValidationError(
-                'The answers must be an object with the keys "question_id" and "answer"')
+                'The answers must be an object with the keys "question_id" and "answer"'
+            )
         _validate_api_input(answer, 'question_id', int)
         _validate_api_input(answer, 'answer', string_types)
 
         if answer['question_id'] not in q_id_to_answer_db:
-            msg = ('The user answered a question they did not previously configure while '
-                   'attempting to reset their password')
+            msg = (
+                'The user answered a question they did not previously configure while '
+                'attempting to reset their password'
+            )
             log.info({'message': msg, 'user': username})
             raise ValidationError(
-                'One of the answers was to a question that wasn\'t previously configured')
+                'One of the answers was to a question that wasn\'t previously configured'
+            )
         # Don't allow an attacker to enter in the same question and answer combination more than
         # once
         if answer['question_id'] in seen_question_ids:
-            msg = ('The user answered the same question multiple times while attempting to reset '
-                   'their password')
+            msg = (
+                'The user answered the same question multiple times while attempting to reset '
+                'their password'
+            )
             log.info({'message': msg, 'user': username})
-            raise ValidationError('You must answer {0} different questions'.format(
-                current_app.config['REQUIRED_ANSWERS']))
+            raise ValidationError(
+                'You must answer {0} different questions'.format(
+                    current_app.config['REQUIRED_ANSWERS']
+                )
+            )
         seen_question_ids.add(answer['question_id'])
 
     # Only check if the answers are correct after knowing the input is valid as to not give away
@@ -459,7 +502,8 @@ def reset_password():
         else:
             input_answer = answer['answer'].lower()
         is_correct_answer = Answer.verify_answer(
-            input_answer, q_id_to_answer_db[answer['question_id']])
+            input_answer, q_id_to_answer_db[answer['question_id']]
+        )
         if is_correct_answer is not True:
             log.info({'message': 'The user entered an incorrect answer', 'user': username})
             failed_attempt = FailedAttempt(user_id=user_id, time=datetime.utcnow())
@@ -469,8 +513,10 @@ def reset_password():
             if User.is_user_locked_out(user_id):
                 msg = 'The user failed too many password reset attempts. They are now locked out.'
                 log.info({'message': msg, 'user': username})
-                raise Unauthorized('You have answered incorrectly too many times. Your account is '
-                                   'now locked. Please try again later.')
+                raise Unauthorized(
+                    'You have answered incorrectly too many times. Your account is '
+                    'now locked. Please try again later.'
+                )
             raise Unauthorized('One or more answers were incorrect. Please try again.')
 
     log.debug({'message': 'The user successfully answered their questions', 'user': username})

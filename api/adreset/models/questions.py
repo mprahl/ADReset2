@@ -59,10 +59,10 @@ class Answer(db.Model):
     # The hashed answer should be around 120 characters, but give it plenty of room to expand in
     # the event the hashing algorithm is updated
     answer = db.Column(db.String(256), nullable=False)
-    user_id = db.Column(
-        db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     question_id = db.Column(
-        db.Integer(), db.ForeignKey('question.id', ondelete='CASCADE'), nullable=False)
+        db.Integer(), db.ForeignKey('question.id', ondelete='CASCADE'), nullable=False
+    )
 
     @validates('answer')
     def validate_answer(self, key, answer):
