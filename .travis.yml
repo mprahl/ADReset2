@@ -1,14 +1,6 @@
 matrix:
   include:
   - language: python
-    python: 2.7
-    env: TOXENV=py27
-    install:
-    - pip install tox
-    script:
-    - cd api && tox
-
-  - language: python
     python: 3.6
     env: TOXENV=py36
     install:
