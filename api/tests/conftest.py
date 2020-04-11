@@ -53,7 +53,8 @@ def mock_ad(app):
     # Create a mock LDAP directory
     mock_server = ldap3.Server(app.config['AD_LDAP_URI'], get_info=ldap3.OFFLINE_AD_2012_R2)
     mock_connection = ldap3.Connection(
-        mock_server, client_strategy=ldap3.MOCK_SYNC, authentication=ldap3.SIMPLE)
+        mock_server, client_strategy=ldap3.MOCK_SYNC, authentication=ldap3.SIMPLE
+    )
     ldap_entries_path = path.join(path.abspath(path.dirname(__file__)), 'ad', 'directory.json')
     mock_connection.strategy.entries_from_json(ldap_entries_path)
 
@@ -94,10 +95,7 @@ def admin_logged_in_headers(mock_admin_ad):
     db.session.add(user)
     db.session.commit()
     token = create_access_token(identity={'guid': guid, 'username': 'testuser'})
-    return {
-        'Authorization': 'Bearer {0}'.format(token),
-        'Content-Type': 'application/json'
-    }
+    return {'Authorization': 'Bearer {0}'.format(token), 'Content-Type': 'application/json'}
 
 
 @pytest.fixture(scope='function')
@@ -109,7 +107,4 @@ def logged_in_headers(mock_user_ad):
     db.session.add(user)
     db.session.commit()
     token = create_access_token(identity={'guid': guid, 'username': 'testuser2'})
-    return {
-        'Authorization': 'Bearer {0}'.format(token),
-        'Content-Type': 'application/json'
-    }
+    return {'Authorization': 'Bearer {0}'.format(token), 'Content-Type': 'application/json'}

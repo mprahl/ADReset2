@@ -34,6 +34,13 @@ matrix:
     script:
     - cd api && tox
 
+    - language: python
+    env: TOXENV=black
+    install:
+    - pip install tox
+    script:
+    - cd api && tox
+
   - language: node_js
     node_js:
     - '8'

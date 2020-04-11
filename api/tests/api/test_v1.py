@@ -21,14 +21,13 @@ def test_about(client):
         'allow_duplicate_answers': False,
         'answers_minimum_length': 2,
         'required_answers': 3,
-        'version': version
+        'version': version,
     }
 
 
-@pytest.mark.parametrize('origin, header_set', [
-    ('http://localhost', True),
-    ('http://some-hacker.domain.local', False)
-])
+@pytest.mark.parametrize(
+    'origin, header_set', [('http://localhost', True), ('http://some-hacker.domain.local', False)]
+)
 def test_insert_headers(client, origin, header_set):
     """Test that the appropriate headers are inserted in a Flask response."""
     rv = client.get('/api/v1/', headers={'Origin': origin})
@@ -47,9 +46,12 @@ def test_login(client, mock_user_ad):
     # Make sure the user doesn't exist before the first login
     assert len(User.query.all()) == 0
     # Because we are mocking AD with ldap3, we have to use the distinguished name to log in
-    rv = client.post('/api/v1/login', data=json.dumps({
-        'username': 'CN=testuser2,OU=ADReset,DC=adreset,DC=local',
-        'password': 'P@ssW0rd'}))
+    rv = client.post(
+        '/api/v1/login',
+        data=json.dumps(
+            {'username': 'CN=testuser2,OU=ADReset,DC=adreset,DC=local', 'password': 'P@ssW0rd'}
+        ),
+    )
     assert rv.status_code == 200
     rv_json = json.loads(rv.data.decode('utf-8'))
     assert set(rv_json.keys()) == set(['token'])
@@ -69,9 +71,12 @@ def test_login_failed_not_enough_questions(client, mock_user_ad):
     db.session.delete(first_question)
     db.session.commit()
     # Because we are mocking AD with ldap3, we have to use the distinguished name to log in
-    rv = client.post('/api/v1/login', data=json.dumps({
-        'username': 'CN=testuser2,OU=ADReset,DC=adreset,DC=local',
-        'password': 'P@ssW0rd'}))
+    rv = client.post(
+        '/api/v1/login',
+        data=json.dumps(
+            {'username': 'CN=testuser2,OU=ADReset,DC=adreset,DC=local', 'password': 'P@ssW0rd'}
+        ),
+    )
     assert rv.status_code == 400
     rv_json = json.loads(rv.data.decode('utf-8'))
     assert rv_json['message'] == 'The administrator has not finished configuring the application'
@@ -82,9 +87,12 @@ def test_admin_login(client, mock_admin_ad):
     # Make sure the user doesn't exist before the first login
     assert len(User.query.all()) == 0
     # Because we are mocking AD with ldap3, we have to use the distinguished name to log in
-    rv = client.post('/api/v1/login', data=json.dumps({
-        'username': 'CN=testuser,OU=ADReset,DC=adreset,DC=local',
-        'password': 'P@ssW0rd'}))
+    rv = client.post(
+        '/api/v1/login',
+        data=json.dumps(
+            {'username': 'CN=testuser,OU=ADReset,DC=adreset,DC=local', 'password': 'P@ssW0rd'}
+        ),
+    )
     assert rv.status_code == 200
     rv_json = json.loads(rv.data.decode('utf-8'))
     assert set(rv_json.keys()) == set(['token'])
@@ -114,45 +122,37 @@ def test_logout(client, logged_in_headers):
 
 def test_add_question(client, logged_in_headers, admin_logged_in_headers):
     """Test the /api/v1/questions POST route."""
-    data = json.dumps({
-        'question': 'What is your favorite movie?'
-    })
+    data = json.dumps({'question': 'What is your favorite movie?'})
     rv = client.post('/api/v1/questions', headers=admin_logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'enabled': True,
         'id': 4,
         'question': 'What is your favorite movie?',
-        'url': 'http://localhost/api/v1/questions/4'
+        'url': 'http://localhost/api/v1/questions/4',
     }
 
     rv = client.post('/api/v1/questions', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'You must be an administrator to proceed with this action',
-        'status': 403
+        'status': 403,
     }
 
 
 def test_add_question_disabled(client, admin_logged_in_headers):
     """Test the /api/v1/questions POST route with "enabled" set to false."""
-    data = json.dumps({
-        'enabled': False,
-        'question': 'What is your favorite movie?',
-    })
+    data = json.dumps({'enabled': False, 'question': 'What is your favorite movie?'})
     rv = client.post('/api/v1/questions', headers=admin_logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'enabled': False,
         'id': 4,
         'question': 'What is your favorite movie?',
-        'url': 'http://localhost/api/v1/questions/4'
+        'url': 'http://localhost/api/v1/questions/4',
     }
 
 
 def test_patch_question(client, logged_in_headers, admin_logged_in_headers):
     """Test the /api/v1/questions PATCH route."""
-    data = json.dumps({
-        'question': 'What is your favorite movie?',
-        'enabled': False,
-    })
+    data = json.dumps({'question': 'What is your favorite movie?', 'enabled': False})
     rv = client.patch('/api/v1/questions/1', headers=admin_logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'enabled': False,
@@ -164,7 +164,7 @@ def test_patch_question(client, logged_in_headers, admin_logged_in_headers):
     rv = client.patch('/api/v1/questions/1', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'You must be an administrator to proceed with this action',
-        'status': 403
+        'status': 403,
     }
 
 
@@ -188,20 +188,20 @@ def test_get_questions(enabled, client):
                 'enabled': True,
                 'id': 1,
                 'question': 'What is your favorite flavor of ice cream?',
-                'url': 'http://localhost/api/v1/questions/1'
+                'url': 'http://localhost/api/v1/questions/1',
             },
             {
                 'enabled': True,
                 'id': 2,
                 'question': 'What is your favorite color?',
-                'url': 'http://localhost/api/v1/questions/2'
+                'url': 'http://localhost/api/v1/questions/2',
             },
             {
                 'enabled': True,
                 'id': 3,
                 'question': 'What is your favorite toy?',
-                'url': 'http://localhost/api/v1/questions/3'
-            }
+                'url': 'http://localhost/api/v1/questions/3',
+            },
         ]
 
     if enabled in (None, False):
@@ -210,7 +210,7 @@ def test_get_questions(enabled, client):
                 'enabled': False,
                 'id': 4,
                 'question': 'What is your favorite type of pizza?',
-                'url': 'http://localhost/api/v1/questions/4'
+                'url': 'http://localhost/api/v1/questions/4',
             }
         ]
 
@@ -234,26 +234,19 @@ def test_get_question(client):
     assert json.loads(rv.data.decode('utf-8')) == {
         'enabled': True,
         'id': 2,
-        'question': 'What is your favorite color?'
+        'question': 'What is your favorite color?',
     }
 
 
 def test_add_answers(client, logged_in_headers, admin_logged_in_headers):
     """Test the answers POST route."""
-    data = json.dumps([
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-        {
-            'question_id': 2,
-            'answer': 'bright pink'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+            {'question_id': 2, 'answer': 'bright pink'},
+        ]
+    )
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == [
         {
@@ -294,30 +287,23 @@ def test_add_answers(client, logged_in_headers, admin_logged_in_headers):
     rv = client.post('/api/v1/answers', headers=admin_logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'Administrators are not authorized to proceed with this action',
-        'status': 403
+        'status': 403,
     }
 
 
 def test_add_answers_duplicate_question(client, logged_in_headers):
     """Test that the answers POST route errors when a duplicate question is provided."""
-    data = json.dumps([
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 2,
-            'answer': 'cherry red'
-        },
-        {
-            'question_id': 2,
-            'answer': 'bright pink'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 2, 'answer': 'cherry red'},
+            {'question_id': 2, 'answer': 'bright pink'},
+        ]
+    )
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'One or more questions were the same. Please provide unique questions.',
-        'status': 400
+        'status': 400,
     }
 
 
@@ -327,67 +313,46 @@ def test_add_answers_disabled_question(client, logged_in_headers):
     question.enabled = False
     db.session.add(question)
     db.session.commit()
-    data = json.dumps([
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-        {
-            'question_id': 2,
-            'answer': 'bright pink'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+            {'question_id': 2, 'answer': 'bright pink'},
+        ]
+    )
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The "question_id" of 2 is to a disabled question',
-        'status': 400
+        'status': 400,
     }
 
 
 def test_add_answers_duplicate_answer(app, client, logged_in_headers):
     """Test that the answers POST route errors when an answer is reused."""
-    data = json.dumps([
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-        {
-            'question_id': 2,
-            'answer': 'strawberry'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+            {'question_id': 2, 'answer': 'strawberry'},
+        ]
+    )
     with mock.patch.dict(app.config, {'ALLOW_DUPLICATE_ANSWERS': False}):
         rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'One or more answers were the same. Please provide unique answers.',
-        'status': 400
+        'status': 400,
     }
 
 
 def test_add_answers_duplicate_answer_conf_true(app, client, logged_in_headers):
     """Test that the answers POST route allows an answer to be reused with the config as true."""
-    data = json.dumps([
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-        {
-            'question_id': 2,
-            'answer': 'bright pink'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+            {'question_id': 2, 'answer': 'bright pink'},
+        ]
+    )
     with mock.patch.dict(app.config, {'ALLOW_DUPLICATE_ANSWERS': True}):
         rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert rv.status_code == 201
@@ -399,62 +364,40 @@ def test_add_answers_past_limit(client, logged_in_headers):
     question = Question(question='Where were you born?')
     db.session.add(question)
     db.session.commit()
-    data = json.dumps([
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-        {
-            'question_id': 2,
-            'answer': 'bright pink'
-        },
-        {
-            'question_id': 4,
-            'answer': 'Boston, MA'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+            {'question_id': 2, 'answer': 'bright pink'},
+            {'question_id': 4, 'answer': 'Boston, MA'},
+        ]
+    )
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': '4 answers were supplied but 3 are required',
-        'status': 400
+        'status': 400,
     }
 
 
 def test_add_answers_under_limit(client, logged_in_headers):
     """Test that the answers POST route doesn't allow less than the required amount of answers."""
-    data = json.dumps([
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-    ])
+    data = json.dumps([{'question_id': 3, 'answer': 'Buzz Lightyear'}])
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': '1 answer was supplied but 3 are required',
-        'status': 400
+        'status': 400,
     }
 
 
 def test_add_answers_case_insensitive(app, client, logged_in_headers):
     """Test the answers POST route when case sensitive answers are disabled."""
-    data = json.dumps([
-        {
-            'question_id': 2,
-            'answer': 'Bright Green'
-        },
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 2, 'answer': 'Bright Green'},
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+        ]
+    )
     with mock.patch.dict(app.config, {'CASE_SENSITIVE_ANSWERS': False}):
         client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert Answer.verify_answer('bright green', Answer.query.get(1).answer) is True
@@ -463,20 +406,13 @@ def test_add_answers_case_insensitive(app, client, logged_in_headers):
 
 def test_add_answers_case_sensitive(app, client, logged_in_headers):
     """Test the answers POST route when case sensitive answers are enabled."""
-    data = json.dumps([
-        {
-            'question_id': 2,
-            'answer': 'Bright Green'
-        },
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 2, 'answer': 'Bright Green'},
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+        ]
+    )
     with mock.patch.dict(app.config, {'CASE_SENSITIVE_ANSWERS': True}):
         client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert Answer.verify_answer('bright green', Answer.query.get(1).answer) is False
@@ -485,69 +421,49 @@ def test_add_answers_case_sensitive(app, client, logged_in_headers):
 
 def test_add_answers_not_min_length(client, logged_in_headers):
     """Test that the answers POST route doesn't allow an answer that is too short."""
-    data = json.dumps([
-        {
-            'question_id': 2,
-            'answer': 'b'
-        },
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 2, 'answer': 'b'},
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+        ]
+    )
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The answer must be at least 2 characters long',
-        'status': 400
+        'status': 400,
     }
 
 
 def test_add_answers_no_question_id(client, logged_in_headers):
     """Test that the answers POST route doesn't allow an answer without a question_id."""
-    data = json.dumps([
-        {
-            'answer': 'not sure'
-        },
-        {
-            'question_id': 3,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'answer': 'not sure'},
+            {'question_id': 3, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+        ]
+    )
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The parameter "question_id" must not be empty',
-        'status': 400
+        'status': 400,
     }
 
 
 def test_add_answers_invalid_question_id(client, logged_in_headers):
     """Test that the answers POST route doesn't allow an answer with an invalid question_id."""
-    data = json.dumps([
-        {
-            'question_id': 123,
-            'answer': 'Buzz Lightyear'
-        },
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-        {
-            'question_id': 2,
-            'answer': 'bright pink'
-        },
-    ])
+    data = json.dumps(
+        [
+            {'question_id': 123, 'answer': 'Buzz Lightyear'},
+            {'question_id': 1, 'answer': 'strawberry'},
+            {'question_id': 2, 'answer': 'bright pink'},
+        ]
+    )
     rv = client.post('/api/v1/answers', headers=logged_in_headers, data=data)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The "question_id" is invalid',
-        'status': 400
+        'status': 400,
     }
 
 
@@ -563,15 +479,15 @@ def test_get_answer(client, logged_in_headers, admin_logged_in_headers):
             'enabled': True,
             'id': 1,
             'question': 'What is your favorite flavor of ice cream?',
-            'url': 'http://localhost/api/v1/questions/1'
+            'url': 'http://localhost/api/v1/questions/1',
         },
-        'user_id': 1
+        'user_id': 1,
     }
 
     rv = client.get('/api/v1/answers/1', headers=admin_logged_in_headers)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'Administrators are not authorized to proceed with this action',
-        'status': 403
+        'status': 403,
     }
 
 
@@ -580,7 +496,7 @@ def test_get_answer_not_found(client, logged_in_headers):
     rv = client.get('/api/v1/answers/1', headers=logged_in_headers)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'The answer was not found',
-        'status': 404
+        'status': 404,
     }
 
 
@@ -595,7 +511,7 @@ def test_get_answer_different_user(client, logged_in_headers):
     rv = client.get('/api/v1/answers/1', headers=logged_in_headers)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'This answer is not associated with your account',
-        'status': 401
+        'status': 401,
     }
 
 
@@ -621,7 +537,7 @@ def test_get_answers(client, logged_in_headers, admin_logged_in_headers):
                 'url': 'http://localhost/api/v1/questions/1',
             },
             'url': 'http://localhost/api/v1/answers/1',
-            'user_id': 1
+            'user_id': 1,
         },
         {
             'id': 2,
@@ -632,7 +548,7 @@ def test_get_answers(client, logged_in_headers, admin_logged_in_headers):
                 'url': 'http://localhost/api/v1/questions/2',
             },
             'url': 'http://localhost/api/v1/answers/2',
-            'user_id': 1
+            'user_id': 1,
         },
         {
             'id': 3,
@@ -643,15 +559,15 @@ def test_get_answers(client, logged_in_headers, admin_logged_in_headers):
                 'url': 'http://localhost/api/v1/questions/3',
             },
             'url': 'http://localhost/api/v1/answers/3',
-            'user_id': 1
-        }
+            'user_id': 1,
+        },
     ]
     assert json.loads(rv.data.decode('utf-8'))['items'] == items
 
     rv = client.get('/api/v1/answers', headers=admin_logged_in_headers)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'Administrators are not authorized to proceed with this action',
-        'status': 403
+        'status': 403,
     }
 
 
@@ -678,7 +594,7 @@ def test_get_answers_unauthenticated(client, logged_in_headers, mock_ad):
                 'url': 'http://localhost/api/v1/questions/1',
             },
             'url': 'http://localhost/api/v1/answers/1',
-            'user_id': 1
+            'user_id': 1,
         },
         {
             'id': 2,
@@ -689,7 +605,7 @@ def test_get_answers_unauthenticated(client, logged_in_headers, mock_ad):
                 'url': 'http://localhost/api/v1/questions/2',
             },
             'url': 'http://localhost/api/v1/answers/2',
-            'user_id': 1
+            'user_id': 1,
         },
         {
             'id': 3,
@@ -700,8 +616,8 @@ def test_get_answers_unauthenticated(client, logged_in_headers, mock_ad):
                 'url': 'http://localhost/api/v1/questions/3',
             },
             'url': 'http://localhost/api/v1/answers/3',
-            'user_id': 1
-        }
+            'user_id': 1,
+        },
     ]
     assert json.loads(rv.data.decode('utf-8'))['items'] == items
 
@@ -723,7 +639,7 @@ def test_delete_answers(client, logged_in_headers, admin_logged_in_headers):
     rv = client.delete('/api/v1/answers', headers=admin_logged_in_headers)
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'Administrators are not authorized to proceed with this action',
-        'status': 403
+        'status': 403,
     }
 
 
@@ -740,24 +656,17 @@ def _configure_user():
     db.session.commit()
 
 
-_reset_data = json.dumps({
-    'answers': [
-        {
-            'question_id': 1,
-            'answer': 'strawberry'
-        },
-        {
-            'question_id': 2,
-            'answer': 'green'
-        },
-        {
-            'question_id': 3,
-            'answer': 'buzz lightyear'
-        }
-    ],
-    'new_password': 'RedSoxWorldSeriesCh@mps',
-    'username': 'testuser2',
-})
+_reset_data = json.dumps(
+    {
+        'answers': [
+            {'question_id': 1, 'answer': 'strawberry'},
+            {'question_id': 2, 'answer': 'green'},
+            {'question_id': 3, 'answer': 'buzz lightyear'},
+        ],
+        'new_password': 'RedSoxWorldSeriesCh@mps',
+        'username': 'testuser2',
+    }
+)
 
 
 def test_reset(client, mock_ad):
@@ -778,9 +687,10 @@ def test_reset_no_user_in_ad(client, mock_ad):
     rv = client.post('/api/v1/reset', headers=headers, data=reset_data)
     assert rv.status_code == 400
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': ('You must have configured at least 3 secret answers before resetting your '
-                    'password'),
-        'status': 400
+        'message': (
+            'You must have configured at least 3 secret answers before resetting your ' 'password'
+        ),
+        'status': 400,
     }
 
 
@@ -790,9 +700,10 @@ def test_reset_no_user_in_db(client, mock_ad):
     rv = client.post('/api/v1/reset', headers=headers, data=_reset_data)
     assert rv.status_code == 400
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': ('You must have configured at least 3 secret answers before resetting your '
-                    'password'),
-        'status': 400
+        'message': (
+            'You must have configured at least 3 secret answers before resetting your ' 'password'
+        ),
+        'status': 400,
     }
 
 
@@ -807,7 +718,7 @@ def test_reset_locked_out(client, mock_ad):
     assert rv.status_code == 401
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'Your account is locked. Please try again later.',
-        'status': 401
+        'status': 401,
     }
 
 
@@ -818,30 +729,25 @@ def test_reset_gets_locked_out(client, mock_ad):
         db.session.add(FailedAttempt(user_id=1, time=datetime.utcnow()))
     db.session.commit()
     headers = {'Content-Type': 'application/json'}
-    data = json.dumps({
-        'answers': [
-            {
-                'question_id': 1,
-                'answer': 'wrong'
-            },
-            {
-                'question_id': 2,
-                'answer': 'green'
-            },
-            {
-                'question_id': 3,
-                'answer': 'buzz lightyear'
-            }
-        ],
-        'new_password': 'RedSoxWorldSeriesCh@mps',
-        'username': 'testuser2',
-    })
+    data = json.dumps(
+        {
+            'answers': [
+                {'question_id': 1, 'answer': 'wrong'},
+                {'question_id': 2, 'answer': 'green'},
+                {'question_id': 3, 'answer': 'buzz lightyear'},
+            ],
+            'new_password': 'RedSoxWorldSeriesCh@mps',
+            'username': 'testuser2',
+        }
+    )
     rv = client.post('/api/v1/reset', headers=headers, data=data)
     assert rv.status_code == 401
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': ('You have answered incorrectly too many times. Your account is now locked. '
-                    'Please try again later.'),
-        'status': 401
+        'message': (
+            'You have answered incorrectly too many times. Your account is now locked. '
+            'Please try again later.'
+        ),
+        'status': 401,
     }
 
 
@@ -854,9 +760,10 @@ def test_reset_not_enough_configured_answers(client, mock_ad):
     rv = client.post('/api/v1/reset', headers=headers, data=_reset_data)
     assert rv.status_code == 400
     assert json.loads(rv.data.decode('utf-8')) == {
-        'message': ('You must have configured at least 3 secret answers before resetting your '
-                    'password'),
-        'status': 400
+        'message': (
+            'You must have configured at least 3 secret answers before resetting your ' 'password'
+        ),
+        'status': 400,
     }
 
 
@@ -864,29 +771,22 @@ def test_reset_invalid_question_id(client, mock_ad):
     """Test the reset route when the user answers a question they don't have configured."""
     _configure_user()
     headers = {'Content-Type': 'application/json'}
-    data = json.dumps({
-        'answers': [
-            {
-                'question_id': 999,
-                'answer': 'strawberry'
-            },
-            {
-                'question_id': 2,
-                'answer': 'green'
-            },
-            {
-                'question_id': 3,
-                'answer': 'buzz lightyear'
-            }
-        ],
-        'new_password': 'RedSoxWorldSeriesCh@mps',
-        'username': 'testuser2',
-    })
+    data = json.dumps(
+        {
+            'answers': [
+                {'question_id': 999, 'answer': 'strawberry'},
+                {'question_id': 2, 'answer': 'green'},
+                {'question_id': 3, 'answer': 'buzz lightyear'},
+            ],
+            'new_password': 'RedSoxWorldSeriesCh@mps',
+            'username': 'testuser2',
+        }
+    )
     rv = client.post('/api/v1/reset', headers=headers, data=data)
     assert rv.status_code == 400
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'One of the answers was to a question that wasn\'t previously configured',
-        'status': 400
+        'status': 400,
     }
 
 
@@ -894,29 +794,22 @@ def test_reset_same_question(client, mock_ad):
     """Test the reset route when the user answers the same question multiple times."""
     _configure_user()
     headers = {'Content-Type': 'application/json'}
-    data = json.dumps({
-        'answers': [
-            {
-                'question_id': 1,
-                'answer': 'strawberry'
-            },
-            {
-                'question_id': 1,
-                'answer': 'strawberry'
-            },
-            {
-                'question_id': 3,
-                'answer': 'buzz lightyear'
-            }
-        ],
-        'new_password': 'RedSoxWorldSeriesCh@mps',
-        'username': 'testuser2',
-    })
+    data = json.dumps(
+        {
+            'answers': [
+                {'question_id': 1, 'answer': 'strawberry'},
+                {'question_id': 1, 'answer': 'strawberry'},
+                {'question_id': 3, 'answer': 'buzz lightyear'},
+            ],
+            'new_password': 'RedSoxWorldSeriesCh@mps',
+            'username': 'testuser2',
+        }
+    )
     rv = client.post('/api/v1/reset', headers=headers, data=data)
     assert rv.status_code == 400
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'You must answer 3 different questions',
-        'status': 400
+        'status': 400,
     }
 
 
@@ -924,29 +817,22 @@ def test_reset_incorrect_answer(client, mock_ad):
     """Test the reset route when the user answers a question incorrectly."""
     _configure_user()
     headers = {'Content-Type': 'application/json'}
-    data = json.dumps({
-        'answers': [
-            {
-                'question_id': 1,
-                'answer': 'strawberry'
-            },
-            {
-                'question_id': 2,
-                'answer': 'I dunno'
-            },
-            {
-                'question_id': 3,
-                'answer': 'buzz lightyear'
-            }
-        ],
-        'new_password': 'RedSoxWorldSeriesCh@mps',
-        'username': 'testuser2',
-    })
+    data = json.dumps(
+        {
+            'answers': [
+                {'question_id': 1, 'answer': 'strawberry'},
+                {'question_id': 2, 'answer': 'I dunno'},
+                {'question_id': 3, 'answer': 'buzz lightyear'},
+            ],
+            'new_password': 'RedSoxWorldSeriesCh@mps',
+            'username': 'testuser2',
+        }
+    )
     rv = client.post('/api/v1/reset', headers=headers, data=data)
     assert rv.status_code == 401
     assert json.loads(rv.data.decode('utf-8')) == {
         'message': 'One or more answers were incorrect. Please try again.',
-        'status': 401
+        'status': 401,
     }
 
 
@@ -961,7 +847,7 @@ def test_account_status(client, mock_ad):
         'password_can_be_set_on': None,
         'password_expires_on': None,
         'password_last_set_on': '2016-10-31T23:03:11+0000',
-        'password_never_expires': True
+        'password_never_expires': True,
     }
 
 

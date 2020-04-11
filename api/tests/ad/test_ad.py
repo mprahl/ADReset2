@@ -25,15 +25,11 @@ def test_search(mock_ad):
     rv = mock_ad.search('(sAMAccountName=testuser2)', attributes=['userPrincipalName'])
     assert rv == [
         {
-            'attributes': {
-                'userPrincipalName': 'testuser2@adreset.local'
-            },
+            'attributes': {'userPrincipalName': 'testuser2@adreset.local'},
             'dn': 'CN=testuser2,OU=ADReset,DC=adreset,DC=local',
-            'raw_attributes': {
-                'userPrincipalName': [b'testuser2@adreset.local']
-            },
+            'raw_attributes': {'userPrincipalName': [b'testuser2@adreset.local']},
             'raw_dn': b'CN=testuser2,OU=ADReset,DC=adreset,DC=local',
-            'type': 'searchResEntry'
+            'type': 'searchResEntry',
         }
     ]
 
@@ -82,34 +78,40 @@ def test_get_pw_complexity_required(mock_ad):
     assert mock_ad.pw_complexity_required is True
 
 
-@pytest.mark.parametrize('password,complexity_required,expected', [
-    ('P@ssw0rd123', True, True),
-    ('P@ssw0rd123', False, True),
-    ('p@ssword123', True, True),
-    ('p@ssword123', False, True),
-    ('Password123', True, True),
-    ('Password123', False, True),
-    ('password123', True, False),
-    ('password123', False, True),
-    ('password', True, False),
-    ('password', False, True)
-])
+@pytest.mark.parametrize(
+    'password,complexity_required,expected',
+    [
+        ('P@ssw0rd123', True, True),
+        ('P@ssw0rd123', False, True),
+        ('p@ssword123', True, True),
+        ('p@ssword123', False, True),
+        ('Password123', True, True),
+        ('Password123', False, True),
+        ('password123', True, False),
+        ('password123', False, True),
+        ('password', True, False),
+        ('password', False, True),
+    ],
+)
 def test_match_pwd_complexity(password, complexity_required, expected, mock_ad):
     """Test the AD.match_pwd_complexity method."""
-    with mock.patch('adreset.ad.AD.pw_complexity_required', new_callable=PropertyMock,
-                    return_value=complexity_required):
+    with mock.patch(
+        'adreset.ad.AD.pw_complexity_required',
+        new_callable=PropertyMock,
+        return_value=complexity_required,
+    ):
         assert mock_ad.match_pwd_complexity(password) is expected
 
 
-@pytest.mark.parametrize('password,length_policy,expected', [
-    ('password', 8, True),
-    ('password123', 8, True),
-    ('pass', 8, False)
-])
+@pytest.mark.parametrize(
+    'password,length_policy,expected',
+    [('password', 8, True), ('password123', 8, True), ('pass', 8, False)],
+)
 def test_match_min_pwd_length(password, length_policy, expected, mock_ad):
     """Test the AD.match_min_pwd_length method."""
-    with mock.patch('adreset.ad.AD.min_pwd_length', new_callable=PropertyMock,
-                    return_value=length_policy):
+    with mock.patch(
+        'adreset.ad.AD.min_pwd_length', new_callable=PropertyMock, return_value=length_policy
+    ):
         assert mock_ad.match_min_pwd_length(password) is expected
 
 
@@ -196,7 +198,7 @@ def test_get_account_status(mock_ad):
         'password_can_be_set_on': None,
         'password_expires_on': None,
         'password_last_set_on': datetime(2016, 10, 31, 23, 3, 11, 741022, tzinfo=timezone.utc),
-        'password_never_expires': True
+        'password_never_expires': True,
     }
     assert mock_ad.get_account_status('lockeduser') == expected
 
@@ -233,8 +235,8 @@ def test_check_group_membership_nested():
         [{'attributes': {'distinguishedName': 'CN=ADReset Users,OU=Groups,DC=adreset,DC=local'}}],
         [
             {'attributes': {'sAMAccountName': 'testuser'}},
-            {'attributes': {'sAMAccountName': 'tbrady'}}
-        ]
+            {'attributes': {'sAMAccountName': 'tbrady'}},
+        ],
     ]
     mock_conn_rv = MockLDAPConnection(search_side_effect)
     with mock.patch('ldap3.Server'):
@@ -245,10 +247,7 @@ def test_check_group_membership_nested():
                 assert ad.check_group_membership('testuser', 'ADReset Users') is True
 
 
-@pytest.mark.parametrize('primary_group,expected', [
-    ('ADReset Users', True),
-    ('Some Group', False)
-])
+@pytest.mark.parametrize('primary_group,expected', [('ADReset Users', True), ('Some Group', False)])
 def test_check_group_membership_primary_group(primary_group, expected):
     """Test the AD.check_group_membership method when the group is the primary group."""
     group_dn_base = 'CN={0},OU=Groups,DC=adreset,DC=local'
@@ -256,11 +255,11 @@ def test_check_group_membership_primary_group(primary_group, expected):
         [{'attributes': {'distinguishedName': group_dn_base.format('ADReset Users')}}],
         [
             {'attributes': {'sAMAccountName': 'thanks'}},
-            {'attributes': {'sAMAccountName': 'tbrady'}}
+            {'attributes': {'sAMAccountName': 'tbrady'}},
         ],
         [{'attributes': {'primaryGroupID': 1607}}],
         [{'attributes': {'objectSid': 'S-1-5-21-1270288957-3800934213-3019856503'}}],
-        [{'attributes': {'distinguishedName': group_dn_base.format(primary_group)}}]
+        [{'attributes': {'distinguishedName': group_dn_base.format(primary_group)}}],
     ]
     mock_conn_rv = MockLDAPConnection(search_side_effect)
     with mock.patch('ldap3.Server'):

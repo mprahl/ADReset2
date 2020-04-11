@@ -85,8 +85,11 @@ def add_jwt_claims(identity):
         # Make sure there are enough questions configured for the application to be usable
         total_questions = db.session.query(func.count(Question.question)).scalar()
         if total_questions < current_app.config['REQUIRED_ANSWERS']:
-            log.error('There are {0} questions configured. There must be at least {1}.'
-                      .format(total_questions, current_app.config['REQUIRED_ANSWERS']))
+            log.error(
+                'There are {0} questions configured. There must be at least {1}.'.format(
+                    total_questions, current_app.config['REQUIRED_ANSWERS']
+                )
+            )
             raise ValidationError('The administrator has not finished configuring the application')
         else:
             claims['roles'] = ['user']
@@ -114,8 +117,15 @@ def create_app(config_obj=None):
     if app.config['ENV'] != 'development':
         if app.config['SECRET_KEY'] == 'replace-me-with-something-random':
             raise RuntimeError('You need to change the SECRET_KEY configuration for production')
-    for config in ('AD_DOMAIN', 'AD_LDAP_URI', 'AD_USER_GROUPS', 'AD_ADMIN_GROUPS',
-                   'AD_SERVICE_USERNAME', 'AD_SERVICE_PASSWORD', 'SQLALCHEMY_DATABASE_URI'):
+    for config in (
+        'AD_DOMAIN',
+        'AD_LDAP_URI',
+        'AD_USER_GROUPS',
+        'AD_ADMIN_GROUPS',
+        'AD_SERVICE_USERNAME',
+        'AD_SERVICE_PASSWORD',
+        'SQLALCHEMY_DATABASE_URI',
+    ):
         if not app.config.get(config):
             raise RuntimeError('You need to set the "{0}" setting'.format(config))
 
