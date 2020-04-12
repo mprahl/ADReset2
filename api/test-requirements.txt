@@ -1,3 +1,6 @@
+# Remove this specific version after the following is addressed:
+# https://github.com/cannatag/ldap3/pull/813
+ldap3==2.6.1
 flake8
 flake8-docstrings
 mock
