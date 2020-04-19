@@ -108,11 +108,11 @@ class AD(object):
             self._connection.authentication = ldap3.SIMPLE
 
         try:
-            msg = 'Connecting to Active Directory with the URL "{0}"'.format(ldap_url)
+            msg = f'Connecting to Active Directory with the URL "{ldap_url}"'
             self.log('debug', msg)
             self._connection.open()
         except LDAPSocketOpenError:
-            msg = 'The connection to Active Directory with the URL "{0}" failed'.format(ldap_url)
+            msg = f'The connection to Active Directory with the URL "{ldap_url}" failed'
             self.log('error', msg, exc_info=True)
             raise ADError('The connection to Active Directory failed. Please try again.')
 
@@ -141,9 +141,9 @@ class AD(object):
             self.connection.user = username
         else:
             if self.connection.authentication == ldap3.NTLM:
-                self.connection.user = '{0}\\{1}'.format(domain, username)
+                self.connection.user = f'{domain}\\{username}'
             else:
-                self.connection.user = '{0}@{1}'.format(username, domain)
+                self.connection.user = f'{username}@{domain}'
         self.connection.password = password
 
         svc_account = self._get_config('AD_SERVICE_USERNAME') == username
@@ -199,8 +199,9 @@ class AD(object):
         """
         if not self.connection.bound:
             raise ADError('You must be logged into LDAP to search')
-        msg = 'Searching Active Directory with "{0}" and the following attributes: {1}'.format(
-            search_filter, ', '.join(attributes or [])
+        msg = (
+            f'Searching Active Directory with "{search_filter}" and the following '
+            f'attributes: {", ".join(attributes or [])}'
         )
         self.log('debug', msg)
 
@@ -210,9 +211,9 @@ class AD(object):
             )
         except ldap3.core.exceptions.LDAPAttributeError:
             msg = (
-                'An invalid LDAP attribute was requested when searching for "{0}" with '
-                'attributes: {1}'
-            ).format(search_filter, ', '.join(attributes))
+                f'An invalid LDAP attribute was requested when searching for "{search_filter}" '
+                f'with attributes: {", ".join(attributes)}'
+            )
             self.log('error', msg, exc_info=True)
             raise ADError(self.failed_search_error)
 
@@ -250,7 +251,7 @@ class AD(object):
         :return: the dictionary of attributes, where the keys are the attribute names and
             the values are the attribute values
         """
-        search_filter = '(sAMAccountName={0})'.format(sam_account_name)
+        search_filter = f'(sAMAccountName={sam_account_name})'
         result = self._get_attributes(search_filter, attributes)
         if not result:
             self.log(
@@ -334,7 +335,7 @@ class AD(object):
         :return: the user's sAMAccountNmae
         :rtype: str
         """
-        search_filter = '(&(objectClass=user)(objectGUID={0}))'.format(guid)
+        search_filter = f'(&(objectClass=user)(objectGUID={guid}))'
         results = self.search(search_filter, ['sAMAccountName'])
 
         if 'attributes' in results[0]:
@@ -419,7 +420,7 @@ class AD(object):
             )
         elif not self.match_min_pwd_length(new_password):
             raise ValidationError(
-                'The password must be at least {0} characters long'.format(self.min_pwd_length)
+                f'The password must be at least {self.min_pwd_length} characters long'
             )
         dn = self.get_dn(sam_account_name)
         self.connection.extend.microsoft.modify_password(dn, new_password, old_password=None)
@@ -437,9 +438,7 @@ class AD(object):
         """
         group_dn = self.get_dn(group)
         # Start by seeing if the user is part of a nested group membership
-        search_filter = '(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:={0}))'.format(
-            group_dn
-        )
+        search_filter = f'(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:={group_dn}))'
         results = self.search(search_filter, attributes=['sAMAccountName'])
         members = set(
             [user['attributes']['sAMAccountName'] for user in results if user.get('attributes')]
@@ -451,9 +450,7 @@ class AD(object):
         # group is the group in question
         primary_group_id = self.get_attribute(sam_account_name, 'primaryGroupID')
         domain_sid = self.get_domain_attribute('objectSid')
-        search_filter = '(&(objectClass=group)(objectSid={0}-{1}))'.format(
-            domain_sid, primary_group_id
-        )
+        search_filter = f'(&(objectClass=group)(objectSid={domain_sid}-{primary_group_id}))'
         results = self.search(search_filter, attributes=['distinguishedName'])
         if 'attributes' in results[0] and results[0]['attributes']['distinguishedName'] == group_dn:
             return True

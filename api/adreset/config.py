@@ -46,7 +46,7 @@ class DevConfig(Config):
     """The development ADReset application configuration."""
 
     CORS_ORIGINS = ['*']
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(os.path.join(base_dir, 'adreset.db'))
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(base_dir, "adreset.db")}'
     JSONIFY_PRETTYPRINT_REGULAR = True
 
 

@@ -39,7 +39,7 @@ def _validate_api_input(json_req, key, expected_type):
     """
     value = json_req.get(key)
     if value is not False and value != 0 and not value:
-        raise ValidationError('The parameter "{0}" must not be empty'.format(key))
+        raise ValidationError(f'The parameter "{key}" must not be empty')
     elif not isinstance(value, expected_type):
         if expected_type == str or expected_type == string_types:
             type_name = 'string'
@@ -54,7 +54,7 @@ def _validate_api_input(json_req, key, expected_type):
         else:
             type_name = expected_type.__name__
 
-        raise ValidationError('The parameter "{0}" must be a {1}'.format(key, type_name))
+        raise ValidationError(f'The parameter "{key}" must be a {type_name}')
 
 
 def _str_to_bool(candidate):
@@ -208,9 +208,8 @@ def patch_question(question_id):
     valid_keys = set(['question', 'enabled'])
     if not valid_keys.issuperset(set(req_json.keys())):
         raise ValidationError(
-            'Invalid keys were supplied. Please use the following keys: {0}'.format(
-                ', '.join(sorted(valid_keys))
-            )
+            'Invalid keys were supplied. Please use the following '
+            f'keys: {", ".join(sorted(valid_keys))}'
         )
 
     question = Question.query.get(question_id)
@@ -332,11 +331,9 @@ def add_answers():
         if num_answers == 1:
             error_prefix = '1 answer was'
         else:
-            error_prefix = '{0} answers were'.format(num_answers)
+            error_prefix = f'{num_answers} answers were'
         raise ValidationError(
-            '{0} supplied but {1} are required'.format(
-                error_prefix, current_app.config['REQUIRED_ANSWERS']
-            )
+            f'{error_prefix} supplied but {current_app.config["REQUIRED_ANSWERS"]} are required'
         )
 
     question_ids = set()
@@ -357,9 +354,8 @@ def add_answers():
                 }
             )
             raise ValidationError(
-                'The answer must be at least {0} characters long'.format(
-                    current_app.config['ANSWERS_MINIMUM_LENGTH']
-                )
+                f'The answer must be at least {current_app.config["ANSWERS_MINIMUM_LENGTH"]} '
+                'characters long'
             )
 
         # If answers aren't stored as case-sensitive, then convert it to lowercase
@@ -374,9 +370,7 @@ def add_answers():
             raise ValidationError('The "question_id" is invalid')
         elif question.enabled is False:
             log.info({'message': 'The user tried to use a disabled question', 'user': username})
-            raise ValidationError(
-                'The "question_id" of {0} is to a disabled question'.format(question.id)
-            )
+            raise ValidationError(f'The "question_id" of {question.id} is to a disabled question')
 
         # Store these in sets to check duplicates
         question_ids.add(answer['question_id'])
@@ -428,8 +422,9 @@ def reset_password():
     username = req_json['username']
 
     not_setup_msg = (
-        'You must have configured at least {0} secret answers before resetting your ' 'password'
-    ).format(current_app.config['REQUIRED_ANSWERS'])
+        f'You must have configured at least {current_app.config["REQUIRED_ANSWERS"]} secret '
+        'answers before resetting your password'
+    )
     # Verify the user exists in the database
     ad = adreset.ad.AD()
     ad.service_account_login()
@@ -488,9 +483,7 @@ def reset_password():
             )
             log.info({'message': msg, 'user': username})
             raise ValidationError(
-                'You must answer {0} different questions'.format(
-                    current_app.config['REQUIRED_ANSWERS']
-                )
+                f'You must answer {current_app.config["REQUIRED_ANSWERS"]} different questions'
             )
         seen_question_ids.add(answer['question_id'])
 

@@ -95,7 +95,7 @@ def admin_logged_in_headers(mock_admin_ad):
     db.session.add(user)
     db.session.commit()
     token = create_access_token(identity={'guid': guid, 'username': 'testuser'})
-    return {'Authorization': 'Bearer {0}'.format(token), 'Content-Type': 'application/json'}
+    return {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
 
 @pytest.fixture(scope='function')
@@ -107,4 +107,4 @@ def logged_in_headers(mock_user_ad):
     db.session.add(user)
     db.session.commit()
     token = create_access_token(identity={'guid': guid, 'username': 'testuser2'})
-    return {'Authorization': 'Bearer {0}'.format(token), 'Content-Type': 'application/json'}
+    return {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}

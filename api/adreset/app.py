@@ -127,7 +127,7 @@ def create_app(config_obj=None):
         'SQLALCHEMY_DATABASE_URI',
     ):
         if not app.config.get(config):
-            raise RuntimeError('You need to set the "{0}" setting'.format(config))
+            raise RuntimeError(f'You need to set the "{config}" setting')
 
     init_logging(app)
     db.init_app(app)
@@ -156,7 +156,7 @@ def prune_blacklisted_tokens():
     """Delete blacklisted tokens that have expired from the database."""
     expired = BlacklistedToken.query.filter(BlacklistedToken.expires < datetime.now()).all()
     if expired:
-        print('Removing {0} expired blacklisted tokens'.format(len(expired)))
+        print(f'Removing {len(expired)} expired blacklisted tokens')
         for token in expired:
             db.session.delete(token)
         db.session.commit()

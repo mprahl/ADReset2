@@ -32,7 +32,7 @@ def test_insert_headers(client, origin, header_set):
     """Test that the appropriate headers are inserted in a Flask response."""
     rv = client.get('/api/v1/', headers={'Origin': origin})
     if header_set:
-        assert 'Access-Control-Allow-Origin: {}'.format(origin) in str(rv.headers)
+        assert f'Access-Control-Allow-Origin: {origin}' in str(rv.headers)
         assert 'Access-Control-Allow-Headers: Content-Type' in str(rv.headers)
         assert 'Access-Control-Allow-Methods: DELETE, GET, OPTIONS, PATCH, POST' in str(rv.headers)
     else:
