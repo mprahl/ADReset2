@@ -86,9 +86,9 @@ def add_jwt_claims(identity):
         total_questions = db.session.query(func.count(Question.question)).scalar()
         if total_questions < current_app.config['REQUIRED_ANSWERS']:
             log.error(
-                'There are {0} questions configured. There must be at least {1}.'.format(
-                    total_questions, current_app.config['REQUIRED_ANSWERS']
-                )
+                'There are %d questions configured. There must be at least %d.',
+                total_questions,
+                current_app.config['REQUIRED_ANSWERS'],
             )
             raise ValidationError('The administrator has not finished configuring the application')
         else:

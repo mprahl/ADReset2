@@ -349,9 +349,9 @@ def add_answers():
             log.info(
                 {
                     'message': (
-                        'The user supplied an answer of length {0}, but {1} is required'.format(
-                            len(answer['answer']), current_app.config['ANSWERS_MINIMUM_LENGTH']
-                        )
+                        'The user supplied an answer of length %d, but %d is required',
+                        len(answer['answer']),
+                        current_app.config['ANSWERS_MINIMUM_LENGTH'],
                     ),
                     'user': username,
                 }

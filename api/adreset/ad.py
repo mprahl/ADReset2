@@ -39,7 +39,7 @@ class AD(object):
         if self._connection:
             self._connection.unbind()
 
-    def log(self, category, message, **kwarg):
+    def log(self, category, message, *args, **kwarg):
         """
         Log a message which includes the current logged in user.
 
@@ -53,7 +53,7 @@ class AD(object):
             logged_in_user = self.get_loggedin_user(raise_exc=False)
         else:
             logged_in_user = None
-        log_method({'message': message, 'user': logged_in_user}, **kwarg)
+        log_method({'message': message, 'user': logged_in_user}, *args, **kwarg)
 
     def _get_config(self, config_name, raise_exc=True):
         """
@@ -71,7 +71,7 @@ class AD(object):
         if config_name in current_app.config:
             config = current_app.config[config_name]
         else:
-            self.log('error', 'The configuration option "{0}" is not set'.format(config_name))
+            self.log('error', 'The configuration option "%s" is not set', config_name)
             if raise_exc:
                 raise config_error
             return None
@@ -152,7 +152,7 @@ class AD(object):
                 self.log('error', 'The service account failed to login')
                 raise ADError(self.unknown_error_msg)
             else:
-                self.log('info', 'The user "{0}" failed to login'.format(self.connection.user))
+                self.log('info', 'The user "%s" failed to login', self.connection.user)
                 raise Unauthorized('The username or password is incorrect. Please try again.')
         else:
             if svc_account:
@@ -219,7 +219,7 @@ class AD(object):
         if search_succeeded and self.connection.response:
             return self.connection.response
 
-        self.log('error', 'The search for "{0}" did not yield any results'.format(search_filter))
+        self.log('error', 'The search for "%s" did not yield any results', search_filter)
         if raise_exc:
             raise ADError(self.failed_search_error)
 
@@ -255,9 +255,9 @@ class AD(object):
         if not result:
             self.log(
                 'error',
-                'The LDAP attribute(s) {0} for "{1}" couldn\'t be found'.format(
-                    ', '.join(attributes), sam_account_name
-                ),
+                'The LDAP attribute(s) %s for "%s" couldn\'t be found',
+                ', '.join(attributes),
+                sam_account_name,
             )
 
         return result
@@ -287,9 +287,8 @@ class AD(object):
         if not result:
             self.log(
                 'error',
-                'The LDAP attribute(s) {0} on the domain couldn\'t be found'.format(
-                    ', '.join(attributes)
-                ),
+                'The LDAP attribute(s) %s on the domain couldn\'t be found',
+                ', '.join(attributes),
             )
 
         return result
@@ -342,8 +341,7 @@ class AD(object):
             return results[0]['attributes']['sAMAccountName']
         else:
             self.log(
-                'error',
-                'The user with the GUID {0} couldn\'t be found in Active Directory'.format(guid),
+                'error', 'The user with the GUID %s couldn\'t be found in Active Directory', guid,
             )
             raise ADError('The user couldn\'t be found in Active Directory')
 
@@ -426,7 +424,7 @@ class AD(object):
         dn = self.get_dn(sam_account_name)
         self.connection.extend.microsoft.modify_password(dn, new_password, old_password=None)
         self.connection.extend.microsoft.unlock_account(dn)
-        self.log('info', 'The password for "{0}" was reset'.format(self.connection.user))
+        self.log('info', 'The password for "%s" was reset', self.connection.user)
 
     def check_group_membership(self, sam_account_name, group):
         """
@@ -607,7 +605,7 @@ class AD(object):
         :return: a dictionary with general information about the account or None
         :rtype: dict or None
         """
-        self.log('info', 'Getting the account status for {}'.format(sam_account_name))
+        self.log('info', 'Getting the account status for %s', sam_account_name)
         domain_attributes = self.get_domain_attributes(
             ['lockoutDuration', 'maxPwdAge', 'minPwdAge', 'minPwdLength', 'pwdProperties'],
         )
